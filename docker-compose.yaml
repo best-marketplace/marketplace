@@ -7,14 +7,14 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      postgres:
+      postgres-catalog:
         condition: service_healthy
       kafka:
         condition: service_healthy
 
-  postgres:
+  postgres-catalog:
     image: postgres
-    container_name: postgresCatalog
+    container_name: postgres-catalog
     restart: always
     environment:
       POSTGRES_USER: user
