@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -17,23 +18,19 @@ type EventProducer interface {
 	Send(ctx context.Context, event any) error
 }
 
-// LogEventMiddleware возвращает middleware, которая отправляет ивенты в Kafka
 func LogEventMiddleware(log *slog.Logger, producer EventProducer) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			urlPath := r.URL.Path
-			stringPath := urlPath[5:]
+			stringPath := urlPath[5 : len(urlPath)-1]
 			event := Event{
 				URL:       stringPath,
 				Action:    "open",
 				Timestamp: time.Now(),
 			}
-			log.Info(urlPath)
-			log.Info("XXXXXXXXXXXXXXXXXXX")
+			log.Info(fmt.Sprintf("LogEventMiddleware: urlpath: %s", urlPath))
 
-			// Отправка события в Kafka
 			go func() {
-				// используем контекст с таймаутом, чтобы не зависеть от зависшего Kafka
 				ctx := context.Background()
 				if err := producer.Send(ctx, event); err != nil {
 					log.Error("failed to send event to Kafka", slog.String("err", err.Error()))

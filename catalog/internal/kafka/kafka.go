@@ -13,7 +13,6 @@ type KafkaProducer struct {
 	topic  string
 }
 
-// NewKafkaProducer создаёт нового Kafka-продюсера
 func NewKafkaProducer(brokers []string, topic string) *KafkaProducer {
 	return &KafkaProducer{
 		topic: topic,
@@ -26,7 +25,6 @@ func NewKafkaProducer(brokers []string, topic string) *KafkaProducer {
 	}
 }
 
-// Send сериализует Event и отправляет в Kafka
 func (kp *KafkaProducer) Send(ctx context.Context, event any) error {
 	msgBytes, err := json.Marshal(event)
 	if err != nil {
@@ -42,7 +40,6 @@ func (kp *KafkaProducer) Send(ctx context.Context, event any) error {
 	return kp.writer.WriteMessages(ctx, message)
 }
 
-// Close закрывает продюсера
 func (kp *KafkaProducer) Close() error {
 	return kp.writer.Close()
 }

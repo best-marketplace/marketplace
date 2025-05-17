@@ -17,7 +17,7 @@ type Storage struct {
 }
 
 func ConnectAndNew(log *slog.Logger, cfg *config.DatabaseConfig) (*Storage, error) {
-	const op = "storage.postgresql.New"
+	const op = "database.postgresql.ConnectAndNew"
 
 	log = log.With(
 		slog.String("op", op),
