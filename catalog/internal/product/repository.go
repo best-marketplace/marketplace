@@ -14,7 +14,7 @@ func NewRepository(db *sql.DB) *ProductRepository {
 	return &ProductRepository{db: db}
 }
 
-func (rep *ProductRepository) ViewListProducts(ctx context.Context, offset int, limit int) ([]*models.ProductView, []string, error) {
+func (rep *ProductRepository) ViewListProducts(ctx context.Context, offset int, limit int) ([]*models.ProductListView, []string, error) {
 	const query = `
 		SELECT id, name, price
 		FROM products
@@ -28,12 +28,12 @@ func (rep *ProductRepository) ViewListProducts(ctx context.Context, offset int, 
 	defer rows.Close()
 
 	var (
-		products []*models.ProductView
+		products []*models.ProductListView
 		ids      []string
 	)
 
 	for rows.Next() {
-		var p models.ProductView
+		var p models.ProductListView
 		err := rows.Scan(&p.ID, &p.Name, &p.Price)
 		if err != nil {
 			return nil, nil, err

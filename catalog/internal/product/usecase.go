@@ -18,28 +18,28 @@ type EventProducer interface {
 	Send(ctx context.Context, event any) error
 }
 
-type RepoProductViewer interface {
-	ViewListProducts(context.Context, int, int) ([]*models.ProductView, []string, error)
+type RepoProductListViewer interface {
+	ViewListProducts(context.Context, int, int) ([]*models.ProductListView, []string, error)
 }
 
 type Useacase struct {
-	repoProductViewer RepoProductViewer
-	eventProducer     EventProducer
-	log               *slog.Logger
+	repoProductListViewer RepoProductListViewer
+	eventProducer         EventProducer
+	log                   *slog.Logger
 }
 
-func NewUseacase(log *slog.Logger, repoProductViewer RepoProductViewer, eventProducer EventProducer) *Useacase {
+func NewUseacase(log *slog.Logger, repoProductListViewer RepoProductListViewer, eventProducer EventProducer) *Useacase {
 	return &Useacase{
-		repoProductViewer: repoProductViewer,
-		eventProducer:     eventProducer,
-		log:               log,
+		repoProductListViewer: repoProductListViewer,
+		eventProducer:         eventProducer,
+		log:                   log,
 	}
 }
 
-func (u *Useacase) ViewListProducts(ctx context.Context, offset int, limit int) ([]*models.ProductView, error) {
+func (u *Useacase) ViewListProducts(ctx context.Context, offset int, limit int) ([]*models.ProductListView, error) {
 	const op = "product.usecase.ViewListProducts"
 
-	products, ids, err := u.repoProductViewer.ViewListProducts(ctx, offset, limit)
+	products, ids, err := u.repoProductListViewer.ViewListProducts(ctx, offset, limit)
 	if err != nil {
 		u.log.Error(op+": failed to get products", slog.Any("err", err))
 		return nil, fmt.Errorf("%s: %w", op, err)

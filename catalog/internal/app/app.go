@@ -24,7 +24,6 @@ type App struct {
 	broker     *kafka.KafkaProducer
 }
 
-// NewApp создает и инициализирует приложение
 func NewApp(log *slog.Logger, cfg *config.Config) *App {
 	storage, err := postgresql.ConnectAndNew(log, &cfg.Database)
 	if err != nil {
@@ -71,13 +70,11 @@ func NewApp(log *slog.Logger, cfg *config.Config) *App {
 	}
 }
 
-// Run запускает HTTP сервер
 func (a *App) Run() error {
 	a.log.Info("Starting server ", slog.String("port", a.httpServer.Addr))
 	return a.httpServer.ListenAndServe()
 }
 
-// Shutdown останавливает сервер
 func (a *App) Shutdown(ctx context.Context) error {
 	a.log.Info("Shutting down server...")
 	err := a.httpServer.Shutdown(ctx)

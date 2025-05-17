@@ -9,11 +9,11 @@ import (
 	"strconv"
 )
 
-type ProductViewer interface {
-	ViewListProducts(context.Context, int, int) ([]*models.ProductView, error)
+type ProductListViewer interface {
+	ViewListProducts(context.Context, int, int) ([]*models.ProductListView, error)
 }
 
-func ViewListProducts(log *slog.Logger, productViewer ProductViewer) http.HandlerFunc {
+func ViewListProducts(log *slog.Logger, productListViewer ProductListViewer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "product.handlers.ViewListProducts"
 
@@ -36,7 +36,7 @@ func ViewListProducts(log *slog.Logger, productViewer ProductViewer) http.Handle
 			return
 		}
 
-		products, err := productViewer.ViewListProducts(r.Context(), offset, limit)
+		products, err := productListViewer.ViewListProducts(r.Context(), offset, limit)
 		if err != nil {
 			log.Error(op+": failed to get products", slog.Any("err", err))
 			response.RespondWithError(w, log, http.StatusInternalServerError, "failed to get products")
