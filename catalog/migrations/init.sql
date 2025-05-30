@@ -5,27 +5,28 @@ CREATE TABLE sellers (
     user_id UUID NOT NULL
 );
 
--- Таблица категорий
 CREATE TABLE categories (
     id UUID PRIMARY KEY,
     name TEXT NOT NULL,
     parent_id UUID REFERENCES categories(id) ON DELETE SET NULL
 );
 
--- Таблица товаров
 CREATE TABLE products (
     id UUID PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT,
     price INT NOT NULL CHECK (price >= 0),
-    seller_id UUID NOT NULL REFERENCES sellers(id) ON DELETE CASCADE,
+    seller_id UUID  NOT NULL,
     category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE comments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    comment TEXT NOT NULL
+);
 
-
--- CREATE INDEX idx_inventory_user ON inventory(user_id);
 
 
 -- Вставка продавцов

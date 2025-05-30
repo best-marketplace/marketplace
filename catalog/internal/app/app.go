@@ -36,7 +36,9 @@ func NewApp(log *slog.Logger, cfg *config.Config) *App {
 	producer := kafka.NewKafkaProducer(brokers, topic)
 
 	productRepo := product.NewRepository(storage.DB)
-	productUsecase := product.NewUseacase(log, productRepo, producer)
+	productViewUsecase := product.NewUseacase(log, productRepo, producer)
+	productAddUsecase := product.NewAddUseacase(log, productRepo, producer)
+
 	// authUsecase := user.New(log, storage, cfg.Secret)
 	// shopUsecase := shop.New(log, storage)
 	// walletUsecase := wallet.New(log, storage)
@@ -50,7 +52,10 @@ func NewApp(log *slog.Logger, cfg *config.Config) *App {
 
 	router.Route("/api", func(r chi.Router) {
 		r.Use(m.LogEventMiddleware(log, producer))
-		r.Get("/products/", product.ViewListProducts(log, productUsecase))
+		r.Get("/products/", product.ViewListProducts(log, productViewUsecase))
+		r.Get("/product/", product.ViewProduct(log, productViewUsecase))
+		r.Post("/product/", product.AddProduct(log, productAddUsecase))
+
 	})
 	// router.Post("/api/auth", registeruser.New(log, authUsecase))
 

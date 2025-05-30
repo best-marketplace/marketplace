@@ -1,20 +1,21 @@
 package middleware
 
+import "net/http"
+
 // import (
-// 	"avito-shop-service/internal/lib/handlers/response"
+// 	"catalog/internal/lib/handlers/response"
 // 	"context"
 // 	"errors"
 // 	"log/slog"
 // 	"net/http"
 // 	"strings"
-// 	"time"
 
 // 	"github.com/dgrijalva/jwt-go"
 // )
 
-// type contextKey string
+type contextKey string
 
-// const UserIDContextKey contextKey = "UserID"
+const UserIDContextKey contextKey = "UserID"
 
 // func Auth(log *slog.Logger, secret string) func(http.Handler) http.Handler {
 // 	return func(next http.Handler) http.Handler {
@@ -27,9 +28,7 @@ package middleware
 // 			}
 
 // 			token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-// 				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-// 					return nil, errors.New("unexpected signing method")
-// 				}
+
 // 				return []byte(secret), nil
 // 			})
 
@@ -42,13 +41,6 @@ package middleware
 // 			claims, ok := token.Claims.(jwt.MapClaims)
 // 			if !ok {
 // 				response.RespondWithError(w, log, http.StatusUnauthorized, "Unauthorized")
-
-// 				return
-// 			}
-
-// 			exp, ok := claims["exp"].(float64)
-// 			if !ok || int64(exp) < time.Now().Unix() {
-// 				response.RespondWithError(w, log, http.StatusUnauthorized, "token expired")
 
 // 				return
 // 			}
@@ -88,7 +80,7 @@ package middleware
 // 	return parts[1]
 // }
 
-// func GetUserID(r *http.Request) (string, bool) {
-// 	userID, ok := r.Context().Value(UserIDContextKey).(string)
-// 	return userID, ok
-// }
+func GetUserID(r *http.Request) (string, bool) {
+	userID, ok := r.Context().Value(UserIDContextKey).(string)
+	return userID, ok
+}

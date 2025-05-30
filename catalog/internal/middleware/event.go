@@ -15,7 +15,7 @@ type Event struct {
 }
 
 type EventProducer interface {
-	Send(ctx context.Context, event any) error
+	Send(ctx context.Context, event any, topic string) error
 }
 
 func LogEventMiddleware(log *slog.Logger, producer EventProducer) func(http.Handler) http.Handler {
@@ -32,7 +32,7 @@ func LogEventMiddleware(log *slog.Logger, producer EventProducer) func(http.Hand
 
 			go func() {
 				ctx := context.Background()
-				if err := producer.Send(ctx, event); err != nil {
+				if err := producer.Send(ctx, event, "user-events"); err != nil {
 					log.Error("failed to send event to Kafka", slog.String("err", err.Error()))
 				}
 			}()

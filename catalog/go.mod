@@ -6,6 +6,7 @@ require (
 	github.com/caarlos0/env/v6 v6.10.1
 	github.com/go-chi/chi v1.5.5
 	github.com/go-chi/chi/v5 v5.2.1
+	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.7.4
 	github.com/joho/godotenv v1.5.1
 	github.com/segmentio/kafka-go v0.4.47
