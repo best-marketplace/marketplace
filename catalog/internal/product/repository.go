@@ -90,17 +90,17 @@ func (rep *ProductRepository) ViewProduct(ctx context.Context, id string) (*mode
 	return &product, nil
 }
 
-func (rep *ProductRepository) AddProduct(ctx context.Context, sellerID, name, description, categoryName string, price int) error {
+func (rep *ProductRepository) AddProduct(ctx context.Context, sellerID, name, description, categoryName string, price int) (uuid.UUID, error) {
 	const op = "ProductRepository.AddProduct"
 
-	var categoryID *uuid.UUID
+	var categoryID uuid.UUID
 	queryCategory := `SELECT id FROM categories WHERE name = $1`
 	err := rep.db.QueryRowContext(ctx, queryCategory, categoryName).Scan(&categoryID)
 	if err == sql.ErrNoRows {
-		return fmt.Errorf("%s: category not found", op)
+		return uuid.Nil, fmt.Errorf("%s: category not found", op)
 	}
 	if err != nil {
-		return fmt.Errorf("%s: failed to query category: %w", op, err)
+		return uuid.Nil, fmt.Errorf("%s: failed to query category: %w", op, err)
 	}
 
 	productID := uuid.New()
@@ -114,8 +114,8 @@ func (rep *ProductRepository) AddProduct(ctx context.Context, sellerID, name, de
 		productID, name, description, price, sellerID, categoryID,
 	)
 	if err != nil {
-		return fmt.Errorf("%s: failed to insert product: %w", op, err)
+		return uuid.Nil, fmt.Errorf("%s: failed to insert product: %w", op, err)
 	}
 
-	return nil
+	return productID, nil
 }

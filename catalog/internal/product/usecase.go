@@ -6,13 +6,18 @@ import (
 	"fmt"
 	"log/slog"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Event struct {
-	URL       string    `json:"url,omitempty"`
-	Ids       []string  `json:"ids,omitempty"`
-	Action    string    `json:"action"`
-	Timestamp time.Time `json:"timestamp"`
+	URL         string    `json:"url,omitempty"`
+	Ids         []string  `json:"ids,omitempty"`
+	Action      string    `json:"action"`
+	ProductID   string    `json:"product_id,omitempty"`
+	Title       string    `json:"title,omitempty"`
+	Description string    `json:"description,omitempty"`
+	Timestamp   time.Time `json:"timestamp,omitempty"`
 }
 
 type EventProducer interface {
@@ -117,18 +122,18 @@ func NewAddUseacase(log *slog.Logger, repoProductAdder RepoProductAdder, eventPr
 }
 
 type RepoProductAdder interface {
-	AddProduct(context.Context, string, string, string, string, int) error
+	AddProduct(context.Context, string, string, string, string, int) (uuid.UUID, error)
 }
 
 func (u *AddUseacase) AddProduct(ctx context.Context, sellerID, name, categoryName, Description string, price int) error {
 	const op = "product.usecase.AddProduct"
-
-	if err := u.repoProductAdder.AddProduct(ctx, sellerID, name, categoryName, Description, price); err != nil {
+	productID, err := u.repoProductAdder.AddProduct(ctx, sellerID, name, categoryName, Description, price)
+	if err != nil {
 		return fmt.Errorf("%s:: %w", op, err)
 
 	}
 
-	event := Event{
+	eventUser := Event{
 		URL:       "product",
 		Action:    "create",
 		Timestamp: time.Now(),
@@ -136,7 +141,21 @@ func (u *AddUseacase) AddProduct(ctx context.Context, sellerID, name, categoryNa
 
 	go func() {
 		ctx := context.Background()
-		if err := u.eventProducer.Send(ctx, event, "user-events"); err != nil {
+		if err := u.eventProducer.Send(ctx, eventUser, "user-events"); err != nil {
+			u.log.Error("failed to send event to Kafka", slog.String("err", err.Error()))
+		}
+	}()
+
+	eventProduct := Event{
+		Action:      "product_created",
+		ProductID:   productID.String(),
+		Title:       name,
+		Description: Description,
+	}
+
+	go func() {
+		ctx := context.Background()
+		if err := u.eventProducer.Send(ctx, eventProduct, "product-events"); err != nil {
 			u.log.Error("failed to send event to Kafka", slog.String("err", err.Error()))
 		}
 	}()
