@@ -89,10 +89,26 @@ services:
     volumes:
       - elasticsearch-data:/usr/share/elasticsearch/data
     healthcheck:
-      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q 'status.*green'"]
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q 'status.*yellow'"]
       interval: 30s
       timeout: 10s
       retries: 5
+    networks:
+      - default
+
+  etl:
+    build: ./etl
+    container_name: product-etl
+    depends_on:
+      kafka:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_TOPIC: product-events
+      ELASTICSEARCH_HOST: elasticsearch:9200
+    restart: always
     networks:
       - default
 

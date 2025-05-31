@@ -11,12 +11,20 @@ docker-compose up --build
 
 ## Проверка работоспособности
 
-Чтобы проверить, что Elasticsearch работает корректно, выполните:
+1. Проверка статуса кластера:
 ```bash
-curl http://localhost:9200
+curl -X GET "http://localhost:9200/_cluster/health?pretty"
 ```
 
-Вы должны получить ответ с информацией о версии и статусе кластера.
+2. Проверка списка индексов:
+```bash
+curl -X GET "http://localhost:9200/_cat/indices?v"
+```
+
+3. Проверка маппинга индекса products:
+```bash
+curl -X GET "http://localhost:9200/products/_mapping?pretty"
+```
 
 ## Основные операции
 
@@ -52,44 +60,63 @@ curl -X POST "localhost:9200/products/_doc" -H "Content-Type: application/json" 
 }'
 ```
 
-### 3. Поиск документов
+### 3. Поиск товаров
 
 #### Простой поиск по названию
 ```bash
-curl -X GET "localhost:9200/products/_search" -H "Content-Type: application/json" -d'
+curl -X GET "http://localhost:9200/products/_search?pretty" -H 'Content-Type: application/json' -d'
 {
   "query": {
     "match": {
-      "name": "тестовый"
+      "title": "ноутбук"
     }
   }
 }'
 ```
 
-#### Поиск с фильтрацией по цене
+#### Поиск по названию и описанию
 ```bash
-curl -X GET "localhost:9200/products/_search" -H "Content-Type: application/json" -d'
+curl -X GET "http://localhost:9200/products/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "multi_match": {
+      "query": "мощный",
+      "fields": ["title", "description"]
+    }
+  }
+}'
+```
+
+#### Поиск с фильтрацией по дате
+```bash
+curl -X GET "http://localhost:9200/products/_search?pretty" -H 'Content-Type: application/json' -d'
 {
   "query": {
     "bool": {
       "must": [
-        { "match": { "name": "тестовый" } }
+        { "match": { "title": "ноутбук" } }
       ],
       "filter": [
-        { "range": { "price": { "gte": 50, "lte": 100 } } }
+        {
+          "range": {
+            "created_at": {
+              "gte": "2024-01-01"
+            }
+          }
+        }
       ]
     }
   }
 }'
 ```
 
-#### Поиск по категории
+#### Поиск по точному совпадению product_id
 ```bash
-curl -X GET "localhost:9200/products/_search" -H "Content-Type: application/json" -d'
+curl -X GET "http://localhost:9200/products/_search?pretty" -H 'Content-Type: application/json' -d'
 {
   "query": {
     "term": {
-      "category": "electronics"
+      "product_id": "p123"
     }
   }
 }'
@@ -116,91 +143,110 @@ curl -X POST "localhost:9200/products/_update/123" -H "Content-Type: application
 curl -X DELETE "localhost:9200/products/_doc/123"
 ```
 
+## Агрегации
+
+### 1. Подсчет товаров по категориям
+```bash
+curl -X GET "http://localhost:9200/products/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+  "size": 0,
+  "aggs": {
+    "categories": {
+      "terms": {
+        "field": "category.keyword"
+      }
+    }
+  }
+}'
+```
+
+## Управление индексом
+
+### 1. Удаление индекса
+```bash
+curl -X DELETE "http://localhost:9200/products"
+```
+
+### 2. Создание индекса с маппингом
+```bash
+curl -X PUT "http://localhost:9200/products" -H 'Content-Type: application/json' -d'
+{
+  "mappings": {
+    "properties": {
+      "product_id": { "type": "keyword" },
+      "title": { "type": "text", "analyzer": "russian" },
+      "description": { "type": "text", "analyzer": "russian" },
+      "created_at": { "type": "date" }
+    }
+  }
+}'
+```
+
 ## Мониторинг
 
-### Проверка здоровья кластера
+### 1. Статистика индекса
 ```bash
-curl http://localhost:9200/_cluster/health
+curl -X GET "http://localhost:9200/products/_stats?pretty"
 ```
 
-### Получение списка индексов
+### 2. Информация о кластере
 ```bash
-curl http://localhost:9200/_cat/indices?v
+curl -X GET "http://localhost:9200/_cluster/stats?pretty"
 ```
 
-### Получение статистики
+## Полезные команды для отладки
+
+### 1. Проверка настроек анализатора
 ```bash
-curl http://localhost:9200/_stats
+curl -X GET "http://localhost:9200/products/_analyze?pretty" -H 'Content-Type: application/json' -d'
+{
+  "analyzer": "russian",
+  "text": "Мощный ноутбук с 16ГБ RAM"
+}'
 ```
 
-## Интеграция с приложением
-
-Для интеграции Elasticsearch с вашим Go-приложением:
-
-1. Добавьте зависимость в `go.mod`:
-```go
-require (
-    github.com/olivere/elastic/v7 v7.0.32
-)
+### 2. Получение документа по ID
+```bash
+curl -X GET "http://localhost:9200/products/_doc/p123?pretty"
 ```
 
-2. Пример кода для подключения:
-```go
-import (
-    "github.com/olivere/elastic/v7"
-)
+## Примечания
 
-func NewElasticsearchClient() (*elastic.Client, error) {
-    return elastic.NewClient(
-        elastic.SetURL("http://elasticsearch:9200"),
-        elastic.SetSniff(false),
-    )
-}
-```
+1. Все запросы к Elasticsearch выполняются на порту 9200
+2. Для работы с русским языком используется анализатор "russian"
+3. Поле product_id используется как уникальный идентификатор документа
+4. Все даты хранятся в формате UTC
 
-3. Пример использования в коде:
-```go
-type Product struct {
-    ID          string    `json:"id"`
-    Name        string    `json:"name"`
-    Description string    `json:"description"`
-    Price       float64   `json:"price"`
-    Category    string    `json:"category"`
-    CreatedAt   time.Time `json:"created_at"`
-    UpdatedAt   time.Time `json:"updated_at"`
-}
+## Примеры использования в Python
 
-func IndexProduct(client *elastic.Client, product *Product) error {
-    _, err := client.Index().
-        Index("products").
-        Id(product.ID).
-        BodyJson(product).
-        Do(context.Background())
-    return err
-}
+```python
+from elasticsearch import Elasticsearch
 
-func SearchProducts(client *elastic.Client, query string) ([]Product, error) {
-    searchResult, err := client.Search().
-        Index("products").
-        Query(elastic.NewMatchQuery("name", query)).
-        Do(context.Background())
-    
-    if err != nil {
-        return nil, err
-    }
+# Подключение к Elasticsearch
+es = Elasticsearch(['http://localhost:9200'])
 
-    var products []Product
-    for _, hit := range searchResult.Hits.Hits {
-        var product Product
-        err := json.Unmarshal(hit.Source, &product)
-        if err != nil {
-            return nil, err
+# Поиск товаров
+def search_products(query):
+    response = es.search(
+        index="products",
+        body={
+            "query": {
+                "multi_match": {
+                    "query": query,
+                    "fields": ["title", "description"]
+                }
+            }
         }
-        products = append(products, product)
-    }
-    
-    return products, nil
-}
+    )
+    return response['hits']['hits']
+
+# Получение товара по ID
+def get_product(product_id):
+    return es.get(index="products", id=product_id)
+
+# Создание нового товара
+def create_product(product_data):
+    return es.index(index="products", id=product_data['product_id'], body=product_data)
 ```
 
 ## Важные замечания
