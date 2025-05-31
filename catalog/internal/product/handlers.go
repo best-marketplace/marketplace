@@ -96,6 +96,7 @@ type RequestAddProduct struct {
 	Description  string `json:"description"`
 	Price        int    `json:"price"`
 	CategoryName string `json:"categoryName"`
+	SellerName   string `json:"sellerName"`
 }
 
 type ProductAdder interface {
@@ -112,11 +113,9 @@ func AddProduct(log *slog.Logger, productAdder ProductAdder) http.HandlerFunc {
 
 		// 	response.RespondWithError(w, log, http.StatusUnauthorized, messageUnauthorized)
 		// }
-		userID := uuid.New().String()
 
 		log := log.With(
 			slog.String("op", op),
-			slog.String("user_id", userID),
 		)
 
 		var req RequestAddProduct
@@ -127,7 +126,7 @@ func AddProduct(log *slog.Logger, productAdder ProductAdder) http.HandlerFunc {
 			return
 		}
 
-		if err := productAdder.AddProduct(r.Context(), userID, req.Name, req.Description, req.CategoryName, req.Price); err != nil {
+		if err := productAdder.AddProduct(r.Context(), req.SellerName, req.Name, req.Description, req.CategoryName, req.Price); err != nil {
 			log.Error(fmt.Errorf("%s Error: %w", errAddProduct, err).Error())
 
 			// if errors.Is(err, wallet.ErrInsufficientFunds) {

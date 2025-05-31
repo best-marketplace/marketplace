@@ -59,11 +59,10 @@ func (rep *ProductRepository) ViewProduct(ctx context.Context, id string) (*mode
 			p.name,
 			p.description,
 			p.price,
-			s.shop_name,
+			p.seller_name,
 			c.name,
 			p.created_at
 		FROM products p
-		JOIN sellers s ON p.seller_id = s.id
 		LEFT JOIN categories c ON p.category_id = c.id
 		WHERE p.id = $1
 	`
@@ -90,7 +89,7 @@ func (rep *ProductRepository) ViewProduct(ctx context.Context, id string) (*mode
 	return &product, nil
 }
 
-func (rep *ProductRepository) AddProduct(ctx context.Context, sellerID, name, description, categoryName string, price int) (uuid.UUID, error) {
+func (rep *ProductRepository) AddProduct(ctx context.Context, sellerName, name, description, categoryName string, price int) (uuid.UUID, error) {
 	const op = "ProductRepository.AddProduct"
 
 	var categoryID uuid.UUID
@@ -106,12 +105,12 @@ func (rep *ProductRepository) AddProduct(ctx context.Context, sellerID, name, de
 	productID := uuid.New()
 
 	const queryInsert = `
-		INSERT INTO products (id, name, description, price, seller_id, category_id)
+		INSERT INTO products (id, name, description, price, seller_name, category_id)
 		VALUES ($1, $2, $3, $4, $5, $6)
 	`
 
 	_, err = rep.db.ExecContext(ctx, queryInsert,
-		productID, name, description, price, sellerID, categoryID,
+		productID, name, description, price, sellerName, categoryID,
 	)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("%s: failed to insert product: %w", op, err)

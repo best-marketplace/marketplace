@@ -125,9 +125,9 @@ type RepoProductAdder interface {
 	AddProduct(context.Context, string, string, string, string, int) (uuid.UUID, error)
 }
 
-func (u *AddUseacase) AddProduct(ctx context.Context, sellerID, name, categoryName, Description string, price int) error {
+func (u *AddUseacase) AddProduct(ctx context.Context, sellerName, name, categoryName, Description string, price int) error {
 	const op = "product.usecase.AddProduct"
-	productID, err := u.repoProductAdder.AddProduct(ctx, sellerID, name, categoryName, Description, price)
+	productID, err := u.repoProductAdder.AddProduct(ctx, sellerName, name, categoryName, Description, price)
 	if err != nil {
 		return fmt.Errorf("%s:: %w", op, err)
 
