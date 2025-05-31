@@ -40,6 +40,7 @@ func NewApp(log *slog.Logger, cfg *config.Config) *App {
 	productAddUsecase := product.NewAddUseacase(log, productRepo, producer)
 	commentRepo := comment.NewRepository(storage.DB)
 	commentCreateUsecase := comment.NewCreateUseacase(log, commentRepo, producer)
+	commentViewUsecase := comment.NewViewUseacase(log, commentRepo, producer)
 
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
@@ -51,7 +52,7 @@ func NewApp(log *slog.Logger, cfg *config.Config) *App {
 		r.Get("/product/", product.ViewProduct(log, productViewUsecase))
 		r.Post("/product/", product.AddProduct(log, productAddUsecase))
 		r.Post("/comment/", comment.CreateComment(log, commentCreateUsecase))
-
+		r.Get("/comments/", comment.ViewCommentInProduct(log, commentViewUsecase))
 	})
 	// router.Post("/api/auth", registeruser.New(log, authUsecase))
 
