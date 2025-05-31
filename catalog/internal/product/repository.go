@@ -90,7 +90,7 @@ func (rep *ProductRepository) ViewProduct(ctx context.Context, id string) (*mode
 }
 
 func (rep *ProductRepository) AddProduct(ctx context.Context, sellerName, name, description, categoryName string, price int) (uuid.UUID, error) {
-	const op = "ProductRepository.AddProduct"
+	const op = "product.repository.AddProduct"
 
 	var categoryID uuid.UUID
 	queryCategory := `SELECT id FROM categories WHERE name = $1`

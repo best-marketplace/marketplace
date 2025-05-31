@@ -14,12 +14,10 @@ type KafkaProducer struct {
 	topic  string
 }
 
-func NewKafkaProducer(brokers []string, topic string) *KafkaProducer {
+func NewKafkaProducer(brokers []string) *KafkaProducer {
 	return &KafkaProducer{
-		// topic: topic,
 		writer: &kafka.Writer{
-			Addr: kafka.TCP(brokers...),
-			// Topic:        topic,
+			Addr:         kafka.TCP(brokers...),
 			Balancer:     &kafka.LeastBytes{},
 			RequiredAcks: kafka.RequireOne,
 		},
