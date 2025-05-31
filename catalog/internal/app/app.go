@@ -1,6 +1,7 @@
 package app
 
 import (
+	"catalog/internal/comment"
 	"catalog/internal/config"
 	"catalog/internal/database/postgresql"
 	"catalog/internal/kafka"
@@ -31,20 +32,15 @@ func NewApp(log *slog.Logger, cfg *config.Config) *App {
 		os.Exit(1)
 	}
 	brokers := []string{"kafka:9092"}
-	topic := "user-events"
 
-	producer := kafka.NewKafkaProducer(brokers, topic)
+	producer := kafka.NewKafkaProducer(brokers)
 
 	productRepo := product.NewRepository(storage.DB)
 	productViewUsecase := product.NewUseacase(log, productRepo, producer)
 	productAddUsecase := product.NewAddUseacase(log, productRepo, producer)
-
-	// authUsecase := user.New(log, storage, cfg.Secret)
-	// shopUsecase := shop.New(log, storage)
-	// walletUsecase := wallet.New(log, storage)
-	// infoUsecase := user.NewInfo(log, storage)
-
-	// defer producer.Close()
+	commentRepo := comment.NewRepository(storage.DB)
+	commentCreateUsecase := comment.NewCreateUseacase(log, commentRepo, producer)
+	commentViewUsecase := comment.NewViewUseacase(log, commentRepo, producer)
 
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
@@ -55,7 +51,8 @@ func NewApp(log *slog.Logger, cfg *config.Config) *App {
 		r.Get("/products/", product.ViewListProducts(log, productViewUsecase))
 		r.Get("/product/", product.ViewProduct(log, productViewUsecase))
 		r.Post("/product/", product.AddProduct(log, productAddUsecase))
-
+		r.Post("/comment/", comment.CreateComment(log, commentCreateUsecase))
+		r.Get("/comments/", comment.ViewCommentInProduct(log, commentViewUsecase))
 	})
 	// router.Post("/api/auth", registeruser.New(log, authUsecase))
 

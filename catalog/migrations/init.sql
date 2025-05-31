@@ -24,6 +24,7 @@ CREATE TABLE products (
 CREATE TABLE comments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
+    product_id UUID NOT NULL,
     comment TEXT NOT NULL
 );
 
