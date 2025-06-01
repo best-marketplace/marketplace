@@ -16,7 +16,15 @@ import (
 
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
+
+// type test struct {
+// }
+
+// func (t *test) Send(ctx context.Context, event any, topic string) error {
+//  return nil
+// }
 
 type App struct {
 	httpServer *http.Server
@@ -34,6 +42,7 @@ func NewApp(log *slog.Logger, cfg *config.Config) *App {
 	brokers := []string{"kafka:9092"}
 
 	producer := kafka.NewKafkaProducer(brokers)
+	// producer := &test{}
 
 	productRepo := product.NewRepository(storage.DB)
 	productViewUsecase := product.NewUseacase(log, productRepo, producer)
@@ -45,6 +54,11 @@ func NewApp(log *slog.Logger, cfg *config.Config) *App {
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
+	router.Use(m.MetricsMiddleware)
+
+	router.Handle("/metrics", promhttp.Handler())
+
+	// router.Handle("/metrics", promhttp.Handler())
 
 	router.Route("/api", func(r chi.Router) {
 		r.Use(m.LogEventMiddleware(log, producer))
@@ -74,6 +88,11 @@ func NewApp(log *slog.Logger, cfg *config.Config) *App {
 
 func (a *App) Run() error {
 	a.log.Info("Starting server ", slog.String("port", a.httpServer.Addr))
+	a.log.Info("Prometheus metrics available at :9090/metrics")
+
+	// Запускаем сервер метрик в отдельной горутине
+	// m.StartMetricsServer() - не используем, так как уже добавили /metrics в маршрутизатор
+
 	return a.httpServer.ListenAndServe()
 }
 
