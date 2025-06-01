@@ -164,26 +164,58 @@ services:
     depends_on:
       - prometheus
 
+#  etl:
+#    build: ./etl
+#    container_name: product-etl
+#    depends_on:
+#      kafka:
+#        condition: service_healthy
+#      elasticsearch:
+#        condition: service_healthy
+#    environment:
+#      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+#      KAFKA_TOPIC: product-events
+#      ELASTICSEARCH_HOST: elasticsearch:9200
+#    restart: always
+#    networks:
+#      - default
 
-#   etl:
-#     build: ./etl
-#     container_name: product-etl
-#     depends_on:
-#       kafka:
-#         condition: service_healthy
-#       elasticsearch:
-#         condition: service_healthy
-#     environment:
-#       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-#       KAFKA_TOPIC: product-events
-#       ELASTICSEARCH_HOST: elasticsearch:9200
-#     restart: always
-#     networks:
-#       - default
+#  comment-etl:
+#    build: ./etl
+#    container_name: comment-etl
+#    depends_on:
+#      kafka:
+#        condition: service_healthy
+#      elasticsearch:
+#        condition: service_healthy
+#    environment:
+#      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+#      KAFKA_TOPIC: comment-events
+#      ELASTICSEARCH_HOST: elasticsearch:9200
+#    command: python comment_etl.py
+#    restart: always
+#    networks:
+#      - default
 
-# volumes:
-#   elasticsearch-data:
+  clickhouse-server:
+    image: clickhouse/clickhouse-server:latest
+    container_name: clickhouse-server
+    ports:
+      - "8123:8123"   # HTTP интерфейс
+      - "9000:9000"   # Native интерфейс (для клиентов)
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      - ./clickhouse/config.xml:/etc/clickhouse/config.xml:ro
+      - ./clickhouse/users.xml:/etc/clickhouse/users.xml:ro
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
 
-# networks:
-#   default:
-#     driver: bridge
+volumes:
+#  elasticsearch-data:
+  clickhouse-data:
+
+networks:
+  default:
+    driver: bridge
