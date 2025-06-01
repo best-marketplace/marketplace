@@ -7,8 +7,9 @@ from config import KAFKA_CONFIG
 logger = logging.getLogger(__name__)
 
 class KafkaService:
-    def __init__(self):
+    def __init__(self, topic=None):
         self.config = KAFKA_CONFIG
+        self.topic = topic or self.config['topic']
         self.consumer = None
         self._initialize_consumer()
 
@@ -21,7 +22,7 @@ class KafkaService:
             try:
                 logger.info(f"Attempting to initialize Kafka consumer (attempt {attempt + 1}/{max_retries})")
                 self.consumer = KafkaConsumer(
-                    self.config['topic'],
+                    self.topic,
                     bootstrap_servers=self.config['bootstrap_servers'],
                     group_id=self.config['group_id'],
                     auto_offset_reset='earliest',
@@ -31,7 +32,7 @@ class KafkaService:
                     session_timeout_ms=30000,
                     heartbeat_interval_ms=10000
                 )
-                logger.info(f"Successfully initialized Kafka consumer for topic {self.config['topic']}")
+                logger.info(f"Successfully initialized Kafka consumer for topic {self.topic}")
                 return
             except Exception as e:
                 if attempt < max_retries - 1:
@@ -68,9 +69,9 @@ class KafkaService:
                             logger.warning(f"Received invalid message format: {data}")
                             continue
 
-                        # Check if this is a product creation event
-                        if data.get('action') == 'product_created':
-                            logger.info(f"Processing product_created event: {json.dumps(data, ensure_ascii=False)}")
+                        # Check if this is a product creation event or comment creation event
+                        if data.get('action') in ['product_created', 'comment_created']:
+                            logger.info(f"Processing {data.get('action')} event: {json.dumps(data, ensure_ascii=False)}")
                             callback(data)
                         else:
                             logger.debug(f"Ignoring message with action: {data.get('action')}")

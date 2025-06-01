@@ -134,6 +134,23 @@ services:
     networks:
       - default
 
+  comment-etl:
+    build: ./etl
+    container_name: comment-etl
+    depends_on:
+      kafka:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_TOPIC: comment-events
+      ELASTICSEARCH_HOST: elasticsearch:9200
+    command: python comment_etl.py
+    restart: always
+    networks:
+      - default
+
 volumes:
   elasticsearch-data:
 

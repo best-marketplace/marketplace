@@ -44,4 +44,26 @@ INDEX_MAPPING = {
             }
         }
     }
+}
+
+# Index mapping for comments
+COMMENT_INDEX_MAPPING = {
+    'settings': {
+        'analysis': {
+            'analyzer': {
+                'russian_analyzer': {
+                    'type': 'russian'
+                }
+            }
+        }
+    },
+    'mappings': {
+        'properties': {
+            'comment_id': {'type': 'keyword'},
+            'comment': {
+                'type': 'text',
+                'analyzer': 'russian_analyzer'
+            }
+        }
+    }
 } 

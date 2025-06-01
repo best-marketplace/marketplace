@@ -4,7 +4,7 @@ from datetime import datetime
 import logging
 import time
 import json
-from config import ELASTICSEARCH_CONFIG, INDEX_MAPPING
+from config import ELASTICSEARCH_CONFIG, INDEX_MAPPING, COMMENT_INDEX_MAPPING
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +13,7 @@ class ElasticsearchService:
         self.config = ELASTICSEARCH_CONFIG
         self.es = None
         self.index = self.config['index']
+        self.comment_index = 'comments'
         self._initialize_elasticsearch()
 
     def _initialize_elasticsearch(self):
@@ -36,6 +37,7 @@ class ElasticsearchService:
                 
                 logger.info("Successfully connected to Elasticsearch")
                 self._create_index_if_not_exists()
+                self._create_comment_index_if_not_exists()
                 return
             except Exception as e:
                 if attempt < max_retries - 1:
@@ -56,6 +58,19 @@ class ElasticsearchService:
                 logger.info(f"Index {self.index} already exists")
         except Exception as e:
             logger.error(f"Error creating index {self.index}: {str(e)}")
+            raise
+
+    def _create_comment_index_if_not_exists(self):
+        """Create comments index if it doesn't exist"""
+        try:
+            if not self.es.indices.exists(index=self.comment_index):
+                logger.info(f"Creating index {self.comment_index} with mapping")
+                self.es.indices.create(index=self.comment_index, body=COMMENT_INDEX_MAPPING)
+                logger.info(f"Successfully created index {self.comment_index}")
+            else:
+                logger.info(f"Index {self.comment_index} already exists")
+        except Exception as e:
+            logger.error(f"Error creating index {self.comment_index}: {str(e)}")
             raise
 
     def index_product(self, product_data):
@@ -111,6 +126,60 @@ class ElasticsearchService:
                     return False
             except Exception as e:
                 logger.error(f"Error indexing product {product_data.get('product_id')}: {str(e)}")
+                return False
+
+    def index_comment(self, comment_data):
+        """Index comment in Elasticsearch with retry logic"""
+        if not self.es:
+            logger.info("Elasticsearch connection lost, reinitializing...")
+            self._initialize_elasticsearch()
+
+        max_retries = 3
+        retry_delay = 2  # seconds
+
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"Processing comment data for indexing: {json.dumps(comment_data, ensure_ascii=False)}")
+                
+                # Extract and validate required fields
+                comment_id = comment_data.get('comment_id')
+                if not comment_id:
+                    logger.error("Comment ID is missing in the data")
+                    return False
+
+                # Prepare document for indexing
+                document = {
+                    'comment_id': comment_id,
+                    'comment': comment_data.get('comment', '')
+                }
+
+                logger.info(f"Prepared document for indexing: {json.dumps(document, ensure_ascii=False)}")
+
+                # Index the document
+                response = self.es.index(
+                    index=self.comment_index,
+                    id=comment_id,
+                    body=document,
+                    refresh=True  # Make the document immediately searchable
+                )
+
+                if response['result'] in ['created', 'updated']:
+                    logger.info(f"Successfully indexed comment {comment_id} with result: {response['result']}")
+                    return True
+                else:
+                    logger.warning(f"Unexpected response when indexing comment {comment_id}: {response['result']}")
+                    return False
+
+            except ConnectionError as e:
+                if attempt < max_retries - 1:
+                    logger.warning(f"Connection error while indexing comment (attempt {attempt + 1}/{max_retries}): {str(e)}")
+                    time.sleep(retry_delay)
+                    self._initialize_elasticsearch()  # Try to reinitialize connection
+                else:
+                    logger.error(f"Failed to index comment after {max_retries} attempts: {str(e)}")
+                    return False
+            except Exception as e:
+                logger.error(f"Error indexing comment {comment_data.get('comment_id')}: {str(e)}")
                 return False
 
     def close(self):
