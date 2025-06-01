@@ -8,9 +8,10 @@ import (
 )
 
 type Config struct {
-	ServerPort string `env:"SERVER_PORT" default:"8080"`
-	Secret     string `env:"SECRET"`
-	Database   DatabaseConfig
+	ServerPort    string `env:"SERVER_PORT" default:"8080"`
+	Secret        string `env:"SECRET" default:""`
+	Database      DatabaseConfig
+	Elasticsearch ElasticsearchConfig
 }
 
 type DatabaseConfig struct {
@@ -19,6 +20,10 @@ type DatabaseConfig struct {
 	Port     string `env:"DATABASE_PORT"`
 	User     string `env:"DATABASE_USER"`
 	Password string `env:"DATABASE_PASSWORD"`
+}
+
+type ElasticsearchConfig struct {
+	Host string `env:"ELASTICSEARCH_HOST" default:"elasticsearch:9200"`
 }
 
 func Load() *Config {

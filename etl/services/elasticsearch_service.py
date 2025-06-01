@@ -96,7 +96,7 @@ class ElasticsearchService:
                 document = {
                     'product_id': product_id,
                     'title': product_data.get('title', ''),
-                    'description': product_data.get('description', '')
+                    'seller_name': product_data.get('seller_name', '')
                 }
 
                 logger.info(f"Prepared document for indexing: {json.dumps(document, ensure_ascii=False)}")

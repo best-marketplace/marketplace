@@ -6,6 +6,8 @@ services:
       context: ./catalog
     ports:
       - "8080:8080"
+    environment:
+      - ELASTICSEARCH_HOST=elasticsearch:9200
     depends_on:
       postgres-catalog:
         condition: service_healthy
@@ -118,29 +120,29 @@ services:
     networks:
       - default
 
-  # elasticsearch:
-  #   image: elasticsearch:7.17.14
-  #   container_name: elasticsearch
-  #   environment:
-  #     - discovery.type=single-node
-  #     - xpack.security.enabled=false
-  #     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-  #     - bootstrap.memory_lock=true
-  #   ulimits:
-  #     memlock:
-  #       soft: -1
-  #       hard: -1
-  #   ports:
-  #     - "9200:9200"
-  #   volumes:
-  #     - elasticsearch-data:/usr/share/elasticsearch/data
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q 'status.*yellow'"]
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 5
-  #   networks:
-  #     - default
+  elasticsearch:
+    image: elasticsearch:7.17.14
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - bootstrap.memory_lock=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q 'status.*yellow'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - default
     
   prometheus:
     image: prom/prometheus
@@ -166,38 +168,34 @@ services:
       - prometheus
       - clickhouse-server
 
-#  etl:
-#    build: ./etl
-#    container_name: product-etl
-#    depends_on:
-#      kafka:
-#        condition: service_healthy
-#      elasticsearch:
-#        condition: service_healthy
-#    environment:
-#      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-#      KAFKA_TOPIC: product-events
-#      ELASTICSEARCH_HOST: elasticsearch:9200
-#    restart: always
-#    networks:
-#      - default
+  etl:
+   build: ./etl
+   container_name: product-etl
+   depends_on:
+     kafka:
+       condition: service_healthy
+   environment:
+     KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+     KAFKA_TOPIC: product-events
+     ELASTICSEARCH_HOST: elasticsearch:9200
+   restart: always
+   networks:
+     - default
 
-#  comment-etl:
-#    build: ./etl
-#    container_name: comment-etl
-#    depends_on:
-#      kafka:
-#        condition: service_healthy
-#      elasticsearch:
-#        condition: service_healthy
-#    environment:
-#      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-#      KAFKA_TOPIC: comment-events
-#      ELASTICSEARCH_HOST: elasticsearch:9200
-#    command: python comment_etl.py
-#    restart: always
-#    networks:
-#      - default
+  comment-etl:
+   build: ./etl
+   container_name: comment-etl
+   depends_on:
+     kafka:
+       condition: service_healthy
+   environment:
+     KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+     KAFKA_TOPIC: comment-events
+     ELASTICSEARCH_HOST: elasticsearch:9200
+   command: python comment_etl.py
+   restart: always
+   networks:
+     - default
 
   clickhouse-server:
     image: clickhouse/clickhouse-server:latest
@@ -215,7 +213,7 @@ services:
         hard: 262144
 
 volumes:
-#  elasticsearch-data:
+  elasticsearch-data:
   clickhouse-data:
 
 networks:

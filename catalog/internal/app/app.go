@@ -14,6 +14,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -44,7 +45,23 @@ func NewApp(log *slog.Logger, cfg *config.Config) *App {
 	producer := kafka.NewKafkaProducer(brokers)
 	// producer := &test{}
 
-	productRepo := product.NewRepository(storage.DB)
+	esHost := cfg.Elasticsearch.Host
+	if esHost == "" {
+		esHost = "elasticsearch:9200"
+	}
+	log.Info("Configuring Elasticsearch client", slog.String("host", esHost))
+
+	esConfig := elasticsearch.Config{
+		Addresses: []string{fmt.Sprintf("http://%s", esHost)},
+	}
+
+	esClient, err := elasticsearch.NewClient(esConfig)
+	if err != nil {
+		log.Error("Failed to create Elasticsearch client", "error", err)
+	}
+
+	productRepo := product.NewRepository(storage.DB, esClient)
+
 	productViewUsecase := product.NewUseacase(log, productRepo, producer)
 	productAddUsecase := product.NewAddUseacase(log, productRepo, producer)
 	commentRepo := comment.NewRepository(storage.DB)
@@ -88,10 +105,6 @@ func NewApp(log *slog.Logger, cfg *config.Config) *App {
 
 func (a *App) Run() error {
 	a.log.Info("Starting server ", slog.String("port", a.httpServer.Addr))
-	a.log.Info("Prometheus metrics available at :9090/metrics")
-
-	// Запускаем сервер метрик в отдельной горутине
-	// m.StartMetricsServer() - не используем, так как уже добавили /metrics в маршрутизатор
 
 	return a.httpServer.ListenAndServe()
 }

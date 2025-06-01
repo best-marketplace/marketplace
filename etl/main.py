@@ -48,7 +48,7 @@ class ETLService:
             transformed_data = {
                 'product_id': data.get('product_id'),
                 'title': data.get('title', data.get('name', '')),
-                'description': data.get('description', '')
+                'seller_name': data.get('seller_name', '')
             }
             
             logger.info(f"Transformed product data: {json.dumps(transformed_data, ensure_ascii=False)}")

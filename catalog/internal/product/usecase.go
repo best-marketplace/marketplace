@@ -11,13 +11,13 @@ import (
 )
 
 type Event struct {
-	URL         string    `json:"url,omitempty"`
-	Ids         []string  `json:"ids,omitempty"`
-	Action      string    `json:"action"`
-	ProductID   string    `json:"product_id,omitempty"`
-	Title       string    `json:"title,omitempty"`
-	Description string    `json:"description,omitempty"`
-	Timestamp   time.Time `json:"timestamp,omitempty"`
+	URL        string    `json:"url,omitempty"`
+	Ids        []string  `json:"ids,omitempty"`
+	Action     string    `json:"action"`
+	ProductID  string    `json:"product_id,omitempty"`
+	Title      string    `json:"title,omitempty"`
+	SellerName string    `json:"seller_name,omitempty"`
+	Timestamp  time.Time `json:"timestamp,omitempty"`
 }
 
 type EventProducer interface {
@@ -147,10 +147,10 @@ func (u *AddUseacase) AddProduct(ctx context.Context, sellerName, name, category
 	}()
 
 	eventProduct := Event{
-		Action:      "product_created",
-		ProductID:   productID.String(),
-		Title:       name,
-		Description: Description,
+		Action:     "product_created",
+		ProductID:  productID.String(),
+		Title:      name,
+		SellerName: sellerName,
 	}
 
 	go func() {
