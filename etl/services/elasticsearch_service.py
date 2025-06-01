@@ -80,13 +80,8 @@ class ElasticsearchService:
                 # Prepare document for indexing
                 document = {
                     'product_id': product_id,
-                    'name': product_data.get('name', ''),
-                    'description': product_data.get('description', ''),
-                    'price': float(product_data.get('price', 0.0)),
-                    'categoryName': product_data.get('categoryName', ''),
-                    'sellerName': product_data.get('sellerName', ''),
-                    'created_at': product_data.get('created_at'),
-                    'updated_at': product_data.get('updated_at')
+                    'title': product_data.get('title', ''),
+                    'description': product_data.get('description', '')
                 }
 
                 logger.info(f"Prepared document for indexing: {json.dumps(document, ensure_ascii=False)}")
