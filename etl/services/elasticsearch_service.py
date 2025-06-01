@@ -1,0 +1,128 @@
+from elasticsearch import Elasticsearch
+from elasticsearch.exceptions import ConnectionError, RequestError
+from datetime import datetime
+import logging
+import time
+import json
+from config import ELASTICSEARCH_CONFIG, INDEX_MAPPING
+
+logger = logging.getLogger(__name__)
+
+class ElasticsearchService:
+    def __init__(self):
+        self.config = ELASTICSEARCH_CONFIG
+        self.es = None
+        self.index = self.config['index']
+        self._initialize_elasticsearch()
+
+    def _initialize_elasticsearch(self):
+        """Initialize Elasticsearch connection with retry logic"""
+        max_retries = 5
+        retry_delay = 5  # seconds
+
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"Attempting to initialize Elasticsearch connection (attempt {attempt + 1}/{max_retries})")
+                self.es = Elasticsearch(
+                    hosts=self.config['hosts'],
+                    retry_on_timeout=True,
+                    max_retries=3,
+                    timeout=30
+                )
+                
+                # Test connection
+                if not self.es.ping():
+                    raise ConnectionError("Failed to connect to Elasticsearch")
+                
+                logger.info("Successfully connected to Elasticsearch")
+                self._create_index_if_not_exists()
+                return
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    logger.warning(f"Failed to initialize Elasticsearch (attempt {attempt + 1}/{max_retries}): {str(e)}")
+                    time.sleep(retry_delay)
+                else:
+                    logger.error(f"Failed to initialize Elasticsearch after {max_retries} attempts: {str(e)}")
+                    raise
+
+    def _create_index_if_not_exists(self):
+        """Create index if it doesn't exist"""
+        try:
+            if not self.es.indices.exists(index=self.index):
+                logger.info(f"Creating index {self.index} with mapping")
+                self.es.indices.create(index=self.index, body=INDEX_MAPPING)
+                logger.info(f"Successfully created index {self.index}")
+            else:
+                logger.info(f"Index {self.index} already exists")
+        except Exception as e:
+            logger.error(f"Error creating index {self.index}: {str(e)}")
+            raise
+
+    def index_product(self, product_data):
+        """Index product in Elasticsearch with retry logic"""
+        if not self.es:
+            logger.info("Elasticsearch connection lost, reinitializing...")
+            self._initialize_elasticsearch()
+
+        max_retries = 3
+        retry_delay = 2  # seconds
+
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"Processing product data for indexing: {json.dumps(product_data, ensure_ascii=False)}")
+                
+                # Extract and validate required fields
+                product_id = product_data.get('product_id')
+                if not product_id:
+                    logger.error("Product ID is missing in the data")
+                    return False
+
+                # Prepare document for indexing
+                document = {
+                    'product_id': product_id,
+                    'name': product_data.get('name', ''),
+                    'description': product_data.get('description', ''),
+                    'price': float(product_data.get('price', 0.0)),
+                    'categoryName': product_data.get('categoryName', ''),
+                    'sellerName': product_data.get('sellerName', ''),
+                    'created_at': product_data.get('created_at'),
+                    'updated_at': product_data.get('updated_at')
+                }
+
+                logger.info(f"Prepared document for indexing: {json.dumps(document, ensure_ascii=False)}")
+
+                # Index the document
+                response = self.es.index(
+                    index=self.index,
+                    id=product_id,
+                    body=document,
+                    refresh=True  # Make the document immediately searchable
+                )
+
+                if response['result'] in ['created', 'updated']:
+                    logger.info(f"Successfully indexed product {product_id} with result: {response['result']}")
+                    return True
+                else:
+                    logger.warning(f"Unexpected response when indexing product {product_id}: {response['result']}")
+                    return False
+
+            except ConnectionError as e:
+                if attempt < max_retries - 1:
+                    logger.warning(f"Connection error while indexing product (attempt {attempt + 1}/{max_retries}): {str(e)}")
+                    time.sleep(retry_delay)
+                    self._initialize_elasticsearch()  # Try to reinitialize connection
+                else:
+                    logger.error(f"Failed to index product after {max_retries} attempts: {str(e)}")
+                    return False
+            except Exception as e:
+                logger.error(f"Error indexing product {product_data.get('product_id')}: {str(e)}")
+                return False
+
+    def close(self):
+        """Safely close the Elasticsearch connection"""
+        if self.es:
+            try:
+                self.es.close()
+                logger.info("Elasticsearch connection closed successfully")
+            except Exception as e:
+                logger.error(f"Error closing Elasticsearch connection: {str(e)}") 

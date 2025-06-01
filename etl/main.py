@@ -1,0 +1,136 @@
+import logging
+import sys
+import time
+import signal
+import json
+import uuid
+from datetime import datetime
+from services.kafka_service import KafkaService
+from services.elasticsearch_service import ElasticsearchService
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    stream=sys.stdout
+)
+logger = logging.getLogger(__name__)
+
+class ETLService:
+    def __init__(self):
+        self.kafka_service = None
+        self.es_service = None
+        self.running = False
+
+    def initialize(self):
+        """Initialize ETL service components"""
+        try:
+            logger.info("Starting ETL service initialization...")
+            
+            logger.info("Initializing Elasticsearch service...")
+            self.es_service = ElasticsearchService()
+            
+            logger.info("Initializing Kafka service...")
+            self.kafka_service = KafkaService()
+            
+            logger.info("ETL service initialized successfully")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to initialize ETL service: {str(e)}")
+            return False
+
+    def transform_product_data(self, data):
+        """Transform product data from API format to Elasticsearch format"""
+        try:
+            logger.info(f"Transforming product data: {json.dumps(data, ensure_ascii=False)}")
+            
+            # Get current timestamp
+            current_time = datetime.utcnow().isoformat()
+            
+            # Transform the data
+            transformed_data = {
+                'product_id': data.get('product_id', f"p_{uuid.uuid4().hex[:8]}"),
+                'name': data.get('title', data.get('name', '')),
+                'description': data.get('description', ''),
+                'price': float(data.get('price', 0.0)),
+                'categoryName': data.get('category', data.get('categoryName', '')),
+                'sellerName': data.get('seller', data.get('sellerName', '')),
+                'created_at': data.get('timestamp', current_time),
+                'updated_at': current_time
+            }
+            
+            logger.info(f"Transformed product data: {json.dumps(transformed_data, ensure_ascii=False)}")
+            return transformed_data
+        except Exception as e:
+            logger.error(f"Error transforming product data: {str(e)}")
+            return None
+
+    def process_product(self, data):
+        """Process product data from Kafka"""
+        try:
+            logger.info(f"Starting to process product data: {json.dumps(data, ensure_ascii=False)}")
+            
+            # Transform the data
+            transformed_data = self.transform_product_data(data)
+            if not transformed_data:
+                logger.error("Failed to transform product data")
+                return
+            
+            # Index the product in Elasticsearch
+            success = self.es_service.index_product(transformed_data)
+            if success:
+                logger.info(f"Successfully processed product {transformed_data['product_id']}")
+            else:
+                logger.error(f"Failed to process product {transformed_data['product_id']}")
+        except Exception as e:
+            logger.error(f"Error processing product: {str(e)}")
+
+    def start(self):
+        """Start the ETL service"""
+        if not self.initialize():
+            logger.error("Failed to initialize ETL service. Exiting...")
+            sys.exit(1)
+
+        self.running = True
+        
+        # Set up signal handlers for graceful shutdown
+        signal.signal(signal.SIGINT, self.handle_shutdown)
+        signal.signal(signal.SIGTERM, self.handle_shutdown)
+
+        try:
+            logger.info("Starting ETL service...")
+            self.kafka_service.consume_messages(self.process_product)
+        except Exception as e:
+            logger.error(f"Error in ETL service: {str(e)}")
+        finally:
+            self.shutdown()
+
+    def handle_shutdown(self, signum, frame):
+        """Handle shutdown signals"""
+        logger.info(f"Received signal {signum}. Initiating graceful shutdown...")
+        self.running = False
+        self.shutdown()
+
+    def shutdown(self):
+        """Gracefully shutdown the ETL service"""
+        logger.info("Shutting down ETL service...")
+        
+        try:
+            if self.kafka_service:
+                self.kafka_service.close()
+            
+            if self.es_service:
+                self.es_service.close()
+                
+            logger.info("ETL service shut down successfully")
+        except Exception as e:
+            logger.error(f"Error during shutdown: {str(e)}")
+        finally:
+            sys.exit(0)
+
+def main():
+    etl_service = ETLService()
+    etl_service.start()
+
+if __name__ == "__main__":
+    main() 
