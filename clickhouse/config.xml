@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<yandex>
+    <logger>
+        <level>information</level>
+        <log>/var/log/clickhouse-server/clickhouse-server.log</log>
+        <errorlog>/var/log/clickhouse-server/clickhouse-server.err.log</errorlog>
+        <size>1000M</size>
+        <count>10</count>
+    </logger>
+
+    <http_port>8123</http_port> <!-- порт HTTP -->
+    <tcp_port>9000</tcp_port>   <!-- TCP порт для клиентов -->
+
+    <path>/var/lib/clickhouse/</path> <!-- директория хранения данных -->
+
+    <users_config>/etc/clickhouse-server/users.xml</users_config> <!-- путь к users.xml -->
+
+    <listen_host>0.0.0.0</listen_host> <!-- слушать все интерфейсы -->
+</yandex>
