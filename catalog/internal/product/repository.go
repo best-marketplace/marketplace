@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 )
@@ -47,6 +48,66 @@ func (rep *ProductRepository) ViewListProducts(ctx context.Context, offset int, 
 
 	if err = rows.Err(); err != nil {
 		return nil, nil, err
+	}
+
+	return products, ids, nil
+}
+
+func (rep *ProductRepository) SearchProduct(ctx context.Context, req string) ([]*models.ProductView, []string, error) {
+	// Подготовка термов для to_tsquery: "laptop case" → "laptop:* & case:*"
+	terms := strings.Fields(req)
+	if len(terms) == 0 {
+		return nil, nil, nil
+	}
+	for i := range terms {
+		terms[i] += ":*"
+	}
+	tsQuery := strings.Join(terms, " & ")
+
+	query := `
+SELECT id, name, description, price, seller_name,  created_at,
+       ts_rank(
+           setweight(to_tsvector('english', name), 'A') ||
+           setweight(to_tsvector('english', seller_name), 'B'),
+           to_tsquery('english', $1)
+       ) AS rank
+FROM products
+WHERE to_tsvector('english', name) @@ to_tsquery('english', $1)
+   OR to_tsvector('english', seller_name) @@ to_tsquery('english', $1)
+ORDER BY rank DESC
+LIMIT 50;
+`
+	rows, err := rep.db.QueryContext(ctx, query, tsQuery)
+	if err != nil {
+		return nil, nil, fmt.Errorf("search query failed: %w", err)
+	}
+	defer rows.Close()
+
+	var products []*models.ProductView
+	var ids []string
+
+	for rows.Next() {
+		var p models.ProductView
+
+		err := rows.Scan(
+			&p.ID,
+			&p.Name,
+			&p.Description,
+			&p.Price,
+			&p.SellerName,
+			&p.CreatedAt,
+			new(float64),
+		)
+		if err != nil {
+			return nil, nil, fmt.Errorf("scan product: %w", err)
+		}
+
+		products = append(products, &p)
+		ids = append(ids, p.ID)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, nil, fmt.Errorf("row iteration: %w", err)
 	}
 
 	return products, ids, nil

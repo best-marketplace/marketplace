@@ -19,12 +19,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-// type test struct {
-// }
+type test struct {
+}
 
-// func (t *test) Send(ctx context.Context, event any, topic string) error {
-//  return nil
-// }
+func (t *test) Send(ctx context.Context, event any, topic string) error {
+	return nil
+}
 
 type App struct {
 	httpServer *http.Server
@@ -39,10 +39,10 @@ func NewApp(log *slog.Logger, cfg *config.Config) *App {
 		log.Error("Failed to create DB:")
 		os.Exit(1)
 	}
-	brokers := []string{"kafka:9092"}
+	// brokers := []string{"kafka:9092"}
 
-	producer := kafka.NewKafkaProducer(brokers)
-	// producer := &test{}
+	// producer := kafka.NewKafkaProducer(brokers)
+	producer := &test{}
 
 	productRepo := product.NewRepository(storage.DB)
 	productViewUsecase := product.NewUseacase(log, productRepo, producer)
@@ -51,14 +51,14 @@ func NewApp(log *slog.Logger, cfg *config.Config) *App {
 	commentCreateUsecase := comment.NewCreateUseacase(log, commentRepo, producer)
 	commentViewUsecase := comment.NewViewUseacase(log, commentRepo, producer)
 
+	productSearch := product.NewSearchUseacase(log, productRepo, producer)
+
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
 	router.Use(m.MetricsMiddleware)
 
 	router.Handle("/metrics", promhttp.Handler())
-
-	// router.Handle("/metrics", promhttp.Handler())
 
 	router.Route("/api", func(r chi.Router) {
 		r.Use(m.LogEventMiddleware(log, producer))
@@ -67,8 +67,8 @@ func NewApp(log *slog.Logger, cfg *config.Config) *App {
 		r.Post("/product/", product.AddProduct(log, productAddUsecase))
 		r.Post("/comment/", comment.CreateComment(log, commentCreateUsecase))
 		r.Get("/comments/", comment.ViewCommentInProduct(log, commentViewUsecase))
+		r.Get("/search/", product.SearchProduct(log, productSearch))
 	})
-	// router.Post("/api/auth", registeruser.New(log, authUsecase))
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%s", cfg.ServerPort),
@@ -82,7 +82,7 @@ func NewApp(log *slog.Logger, cfg *config.Config) *App {
 		httpServer: srv,
 		log:        log,
 		storage:    storage,
-		broker:     producer,
+		// broker:     producer,
 	}
 }
 
@@ -106,7 +106,7 @@ func (a *App) Shutdown(ctx context.Context) error {
 	a.storage.Stop()
 	a.log.Info("Database connection closed.")
 
-	a.broker.Close()
+	// a.broker.Close()
 	a.log.Info("Broker connection closed.")
 
 	return nil

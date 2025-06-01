@@ -144,3 +144,25 @@ func AddProduct(log *slog.Logger, productAdder ProductAdder) http.HandlerFunc {
 
 	}
 }
+
+type ProductSearcher interface {
+	SearchProduct(context.Context, string) ([]*models.ProductView, error)
+}
+
+func SearchProduct(log *slog.Logger, ProductSearcher ProductSearcher) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		const op = "product.handlers.ViewProduct"
+
+		request := r.URL.Query().Get("req")
+		fmt.Println(request)
+
+		products, err := ProductSearcher.SearchProduct(r.Context(), request)
+		if err != nil {
+			log.Error(op+": failed to get products", slog.Any("err", err))
+			response.RespondWithError(w, log, http.StatusInternalServerError, "failed to get products")
+			return
+		}
+
+		response.RespondWithJSON(w, log, http.StatusOK, products)
+	}
+}

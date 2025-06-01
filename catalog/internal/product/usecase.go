@@ -162,3 +162,52 @@ func (u *AddUseacase) AddProduct(ctx context.Context, sellerName, name, category
 
 	return nil
 }
+
+type RepoProductSearch interface {
+	SearchProduct(context.Context, string) ([]*models.ProductView, []string, error)
+}
+
+type SearchUseacase struct {
+	RepoProductSearch RepoProductSearch
+	eventProducer     EventProducer
+	log               *slog.Logger
+}
+
+func NewSearchUseacase(log *slog.Logger, RepoProductSearch RepoProductSearch, eventProducer EventProducer) *SearchUseacase {
+	return &SearchUseacase{
+		RepoProductSearch: RepoProductSearch,
+		eventProducer:     eventProducer,
+		log:               log,
+	}
+}
+
+func (u *SearchUseacase) SearchProduct(ctx context.Context, req string) ([]*models.ProductView, error) {
+	const op = "product.usecase.ViewListProducts"
+
+	products, ids, err := u.RepoProductSearch.SearchProduct(ctx, req)
+	if err != nil {
+		u.log.Error(op+": failed to get products", slog.Any("err", err))
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	event := Event{
+		URL:       "products",
+		Ids:       ids,
+		Action:    "visibility",
+		Timestamp: time.Now(),
+	}
+
+	go func() {
+		ctx := context.Background()
+		if err := u.eventProducer.Send(ctx, event, "user-events"); err != nil {
+			u.log.Error("failed to send event to Kafka", slog.String("err", err.Error()))
+		}
+	}()
+
+	u.log.Info(op+": successfully retrieved products",
+		slog.Int("count", len(products)),
+		slog.String("search_request", req),
+	)
+
+	return products, nil
+}
