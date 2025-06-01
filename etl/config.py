@@ -20,13 +20,7 @@ INDEX_MAPPING = {
         'analysis': {
             'analyzer': {
                 'russian_analyzer': {
-                    'type': 'custom',
-                    'tokenizer': 'standard',
-                    'filter': [
-                        'lowercase',
-                        'russian_stop',
-                        'russian_stemmer'
-                    ]
+                    'type': 'russian'
                 }
             }
         }
@@ -34,7 +28,7 @@ INDEX_MAPPING = {
     'mappings': {
         'properties': {
             'product_id': {'type': 'keyword'},
-            'name': {
+            'title': {
                 'type': 'text',
                 'analyzer': 'russian_analyzer',
                 'fields': {
@@ -47,30 +41,29 @@ INDEX_MAPPING = {
             'description': {
                 'type': 'text',
                 'analyzer': 'russian_analyzer'
-            },
-            'price': {'type': 'float'},
-            'categoryName': {
-                'type': 'text',
-                'analyzer': 'russian_analyzer',
-                'fields': {
-                    'keyword': {
-                        'type': 'keyword',
-                        'ignore_above': 256
-                    }
+            }
+        }
+    }
+}
+
+# Index mapping for comments
+COMMENT_INDEX_MAPPING = {
+    'settings': {
+        'analysis': {
+            'analyzer': {
+                'russian_analyzer': {
+                    'type': 'russian'
                 }
-            },
-            'sellerName': {
+            }
+        }
+    },
+    'mappings': {
+        'properties': {
+            'comment_id': {'type': 'keyword'},
+            'comment': {
                 'type': 'text',
-                'analyzer': 'russian_analyzer',
-                'fields': {
-                    'keyword': {
-                        'type': 'keyword',
-                        'ignore_above': 256
-                    }
-                }
-            },
-            'created_at': {'type': 'date'},
-            'updated_at': {'type': 'date'}
+                'analyzer': 'russian_analyzer'
+            }
         }
     }
 } 

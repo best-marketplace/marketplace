@@ -44,19 +44,11 @@ class ETLService:
         try:
             logger.info(f"Transforming product data: {json.dumps(data, ensure_ascii=False)}")
             
-            # Get current timestamp
-            current_time = datetime.utcnow().isoformat()
-            
             # Transform the data
             transformed_data = {
-                'product_id': data.get('product_id', f"p_{uuid.uuid4().hex[:8]}"),
-                'name': data.get('title', data.get('name', '')),
-                'description': data.get('description', ''),
-                'price': float(data.get('price', 0.0)),
-                'categoryName': data.get('category', data.get('categoryName', '')),
-                'sellerName': data.get('seller', data.get('sellerName', '')),
-                'created_at': data.get('timestamp', current_time),
-                'updated_at': current_time
+                'product_id': data.get('product_id'),
+                'title': data.get('title', data.get('name', '')),
+                'description': data.get('description', '')
             }
             
             logger.info(f"Transformed product data: {json.dumps(transformed_data, ensure_ascii=False)}")
@@ -68,6 +60,7 @@ class ETLService:
     def process_product(self, data):
         """Process product data from Kafka"""
         try:
+            logger.info(f"RAW incoming data: {json.dumps(data, ensure_ascii=False)}")
             logger.info(f"Starting to process product data: {json.dumps(data, ensure_ascii=False)}")
             
             # Transform the data
