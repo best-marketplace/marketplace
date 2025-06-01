@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, constr, ConfigDict
+from pydantic import BaseModel, EmailStr, constr, ConfigDict, Field
 from typing import Optional
 from datetime import datetime
 from .models import UserRole

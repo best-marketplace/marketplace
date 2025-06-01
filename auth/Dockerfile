@@ -13,12 +13,12 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD curl -f http://localhost:5000/health || exit 1
 
 ENV PYTHONPATH=/app
 ENV DATABASE_URL=postgresql://marketplace_user:marketplace_password@postgres-auth:5432/marketplace_auth
 ENV JWT_SECRET_KEY=your-secret-key-here
 
-EXPOSE 8000
+EXPOSE 5000
 
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"] 
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "5000", "--reload"] 

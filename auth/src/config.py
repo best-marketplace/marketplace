@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_COOKIE_SECURE: bool = True
     REFRESH_TOKEN_COOKIE_HTTPONLY: bool = True
     REFRESH_TOKEN_COOKIE_SAMESITE: str = "strict"
+    PORT: int = 5000
+    HOST: str = "0.0.0.0"
 
     class Config:
         env_file = ".env"

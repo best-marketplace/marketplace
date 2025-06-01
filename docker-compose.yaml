@@ -12,6 +12,52 @@ services:
       kafka:
         condition: service_healthy
 
+  auth:
+    build: ./auth
+    container_name: auth_service
+    # ports:
+    #   - "5000:5000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres-auth:5432/auth_db
+      - JWT_SECRET_KEY=your-secret-key
+      - JWT_ALGORITHM=HS256
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: api_gateway
+    ports:
+      - "8000:8000"
+    environment:
+      - AUTH_SERVICE_URL=http://auth:5000
+      - CATALOG_SERVICE_URL=http://backend:8080
+      - CONSUMER_SERVICE_URL=http://consumer:5000
+      - ETL_SERVICE_URL=http://etl:5000
+    depends_on:
+      - auth
+      - backend
+
+  postgres-auth:
+    image: postgres
+    container_name: postgres-auth
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: auth_db
+      PGPORT: 5432
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d auth_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - './auth/migrations/:/docker-entrypoint-initdb.d/'
+
   postgres-catalog:
     image: postgres
     container_name: postgres-catalog
@@ -72,29 +118,29 @@ services:
     networks:
       - default
 
-  elasticsearch:
-    image: elasticsearch:7.17.14
-    container_name: elasticsearch
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-      - bootstrap.memory_lock=true
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-    ports:
-      - "9200:9200"
-    volumes:
-      - elasticsearch-data:/usr/share/elasticsearch/data
-    healthcheck:
-      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q 'status.*yellow'"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-    networks:
-      - default
+  # elasticsearch:
+  #   image: elasticsearch:7.17.14
+  #   container_name: elasticsearch
+  #   environment:
+  #     - discovery.type=single-node
+  #     - xpack.security.enabled=false
+  #     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+  #     - bootstrap.memory_lock=true
+  #   ulimits:
+  #     memlock:
+  #       soft: -1
+  #       hard: -1
+  #   ports:
+  #     - "9200:9200"
+  #   volumes:
+  #     - elasticsearch-data:/usr/share/elasticsearch/data
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q 'status.*yellow'"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 5
+  #   networks:
+  #     - default
     
   prometheus:
     image: prom/prometheus
@@ -118,42 +164,26 @@ services:
     depends_on:
       - prometheus
 
-  etl:
-    build: ./etl
-    container_name: product-etl
-    depends_on:
-      kafka:
-        condition: service_healthy
-      elasticsearch:
-        condition: service_healthy
-    environment:
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      KAFKA_TOPIC: product-events
-      ELASTICSEARCH_HOST: elasticsearch:9200
-    restart: always
-    networks:
-      - default
 
-  comment-etl:
-    build: ./etl
-    container_name: comment-etl
-    depends_on:
-      kafka:
-        condition: service_healthy
-      elasticsearch:
-        condition: service_healthy
-    environment:
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      KAFKA_TOPIC: comment-events
-      ELASTICSEARCH_HOST: elasticsearch:9200
-    command: python comment_etl.py
-    restart: always
-    networks:
-      - default
+#   etl:
+#     build: ./etl
+#     container_name: product-etl
+#     depends_on:
+#       kafka:
+#         condition: service_healthy
+#       elasticsearch:
+#         condition: service_healthy
+#     environment:
+#       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+#       KAFKA_TOPIC: product-events
+#       ELASTICSEARCH_HOST: elasticsearch:9200
+#     restart: always
+#     networks:
+#       - default
 
-volumes:
-  elasticsearch-data:
+# volumes:
+#   elasticsearch-data:
 
-networks:
-  default:
-    driver: bridge
+# networks:
+#   default:
+#     driver: bridge
