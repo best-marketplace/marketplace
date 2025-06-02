@@ -33,6 +33,7 @@ PUBLIC_ROUTES = {
     ("/catalog/products/", "GET"),
     ("/catalog/product/", "GET"),
     ("/catalog/comments/", "GET"),
+    ("/catalog/search/", "GET"),
 }
 
 PROTECTED_ROUTES = {
