@@ -158,11 +158,13 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=vertamedia-clickhouse-datasource
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning
       # - grafana-data:/var/lib/grafana
     depends_on:
       - prometheus
+      - clickhouse-server
 
 #  etl:
 #    build: ./etl
@@ -205,8 +207,8 @@ services:
       - "9000:9000"   # Native интерфейс (для клиентов)
     volumes:
       - clickhouse-data:/var/lib/clickhouse
-      - ./clickhouse/config.xml:/etc/clickhouse/config.xml:ro
-      - ./clickhouse/users.xml:/etc/clickhouse/users.xml:ro
+#      - ./clickhouse/config.xml:/etc/clickhouse/config.xml:ro
+#      - ./clickhouse/users.xml:/etc/clickhouse/users.xml:ro
     ulimits:
       nofile:
         soft: 262144
