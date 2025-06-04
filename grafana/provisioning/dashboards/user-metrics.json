@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 1,
+  "id": 2,
   "links": [],
   "panels": [
     {
@@ -258,5 +258,5 @@
   "timezone": "browser",
   "title": "User Events - URL",
   "uid": "911fee98-4de5-4856-a1b4-dc785cd4a881",
-  "version": 2
+  "version": 5
 }
