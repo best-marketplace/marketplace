@@ -4,6 +4,7 @@ go 1.24.2
 
 require (
 	github.com/caarlos0/env/v6 v6.10.1
+	github.com/elastic/go-elasticsearch/v7 v7.17.10
 	github.com/go-chi/chi v1.5.5
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/google/uuid v1.6.0

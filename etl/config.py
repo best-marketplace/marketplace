@@ -38,7 +38,7 @@ INDEX_MAPPING = {
                     }
                 }
             },
-            'description': {
+            'seller_name': {
                 'type': 'text',
                 'analyzer': 'russian_analyzer'
             }
