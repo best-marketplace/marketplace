@@ -75,20 +75,18 @@ func NewApp(log *slog.Logger, cfg *config.Config) *App {
 	router.Use(middleware.Recoverer)
 	router.Use(m.MetricsMiddleware)
 
+	router.Use(m.LogEventMiddleware(log, producer))
 	router.Handle("/metrics", promhttp.Handler())
 
-	router.Route("/api", func(r chi.Router) {
-		r.Use(m.LogEventMiddleware(log, producer))
-		r.Get("/products/", product.ViewListProducts(log, productViewUsecase))
-		r.Get("/product/", product.ViewProduct(log, productViewUsecase))
-		r.Post("/product/", product.AddProduct(log, productAddUsecase))
-		r.Post("/comment/", comment.CreateComment(log, commentCreateUsecase))
-		r.Get("/comments/", comment.ViewCommentInProduct(log, commentViewUsecase))
-		r.Get("/search/", product.SearchProduct(log, productSearch))
-	})
+	router.Get("/products/", product.ViewListProducts(log, productViewUsecase))
+	router.Get("/product/", product.ViewProduct(log, productViewUsecase))
+	router.Post("/product/", product.AddProduct(log, productAddUsecase))
+	router.Post("/comment/", comment.CreateComment(log, commentCreateUsecase))
+	router.Get("/comments/", comment.ViewCommentInProduct(log, commentViewUsecase))
+	router.Get("/search/", product.SearchProduct(log, productSearch))
 
 	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%s", cfg.ServerPort),
+		Addr:         fmt.Sprintf("0.0.0.0:%s", cfg.ServerPort),
 		Handler:      router,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
