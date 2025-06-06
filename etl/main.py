@@ -8,7 +8,7 @@ from datetime import datetime
 from services.kafka_service import KafkaService
 from services.elasticsearch_service import ElasticsearchService
 
-# Configure logging
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -23,7 +23,6 @@ class ETLService:
         self.running = False
 
     def initialize(self):
-        """Initialize ETL service components"""
         try:
             logger.info("Starting ETL service initialization...")
             
@@ -40,11 +39,9 @@ class ETLService:
             return False
 
     def transform_product_data(self, data):
-        """Transform product data from API format to Elasticsearch format"""
         try:
             logger.info(f"Transforming product data: {json.dumps(data, ensure_ascii=False)}")
             
-            # Transform the data
             transformed_data = {
                 'product_id': data.get('product_id'),
                 'title': data.get('title', data.get('name', '')),
@@ -58,18 +55,15 @@ class ETLService:
             return None
 
     def process_product(self, data):
-        """Process product data from Kafka"""
         try:
             logger.info(f"RAW incoming data: {json.dumps(data, ensure_ascii=False)}")
             logger.info(f"Starting to process product data: {json.dumps(data, ensure_ascii=False)}")
             
-            # Transform the data
             transformed_data = self.transform_product_data(data)
             if not transformed_data:
                 logger.error("Failed to transform product data")
                 return
             
-            # Index the product in Elasticsearch
             success = self.es_service.index_product(transformed_data)
             if success:
                 logger.info(f"Successfully processed product {transformed_data['product_id']}")
@@ -79,14 +73,12 @@ class ETLService:
             logger.error(f"Error processing product: {str(e)}")
 
     def start(self):
-        """Start the ETL service"""
         if not self.initialize():
             logger.error("Failed to initialize ETL service. Exiting...")
             sys.exit(1)
 
         self.running = True
         
-        # Set up signal handlers for graceful shutdown
         signal.signal(signal.SIGINT, self.handle_shutdown)
         signal.signal(signal.SIGTERM, self.handle_shutdown)
 
@@ -99,13 +91,11 @@ class ETLService:
             self.shutdown()
 
     def handle_shutdown(self, signum, frame):
-        """Handle shutdown signals"""
         logger.info(f"Received signal {signum}. Initiating graceful shutdown...")
         self.running = False
         self.shutdown()
 
     def shutdown(self):
-        """Gracefully shutdown the ETL service"""
         logger.info("Shutting down ETL service...")
         
         try:

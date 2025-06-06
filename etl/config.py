@@ -14,7 +14,6 @@ ELASTICSEARCH_CONFIG = {
     'index': 'products'
 }
 
-# Index mapping for Elasticsearch
 INDEX_MAPPING = {
     'settings': {
         'analysis': {
@@ -46,7 +45,6 @@ INDEX_MAPPING = {
     }
 }
 
-# Index mapping for comments
 COMMENT_INDEX_MAPPING = {
     'settings': {
         'analysis': {

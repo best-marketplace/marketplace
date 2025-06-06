@@ -7,7 +7,6 @@ from datetime import datetime
 from services.kafka_service import KafkaService
 from services.elasticsearch_service import ElasticsearchService
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -22,7 +21,6 @@ class CommentETLService:
         self.running = False
 
     def initialize(self):
-        """Initialize ETL service components"""
         try:
             logger.info("Starting Comment ETL service initialization...")
             
@@ -39,11 +37,9 @@ class CommentETLService:
             return False
 
     def transform_comment_data(self, data):
-        """Transform comment data from API format to Elasticsearch format"""
         try:
             logger.info(f"Transforming comment data: {json.dumps(data, ensure_ascii=False)}")
             
-            # Transform the data
             transformed_data = {
                 'comment_id': data.get('comment_id'),
                 'comment': data.get('comment', '')
@@ -56,18 +52,15 @@ class CommentETLService:
             return None
 
     def process_comment(self, data):
-        """Process comment data from Kafka"""
         try:
             logger.info(f"RAW incoming data: {json.dumps(data, ensure_ascii=False)}")
             logger.info(f"Starting to process comment data: {json.dumps(data, ensure_ascii=False)}")
             
-            # Transform the data
             transformed_data = self.transform_comment_data(data)
             if not transformed_data:
                 logger.error("Failed to transform comment data")
                 return
             
-            # Index the comment in Elasticsearch
             success = self.es_service.index_comment(transformed_data)
             if success:
                 logger.info(f"Successfully processed comment {transformed_data['comment_id']}")
@@ -77,14 +70,12 @@ class CommentETLService:
             logger.error(f"Error processing comment: {str(e)}")
 
     def start(self):
-        """Start the ETL service"""
         if not self.initialize():
             logger.error("Failed to initialize Comment ETL service. Exiting...")
             sys.exit(1)
 
         self.running = True
         
-        # Set up signal handlers for graceful shutdown
         signal.signal(signal.SIGINT, self.handle_shutdown)
         signal.signal(signal.SIGTERM, self.handle_shutdown)
 
@@ -97,13 +88,11 @@ class CommentETLService:
             self.shutdown()
 
     def handle_shutdown(self, signum, frame):
-        """Handle shutdown signals"""
         logger.info(f"Received signal {signum}. Initiating graceful shutdown...")
         self.running = False
         self.shutdown()
 
     def shutdown(self):
-        """Gracefully shutdown the ETL service"""
         logger.info("Shutting down Comment ETL service...")
         
         try:

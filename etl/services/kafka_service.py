@@ -14,9 +14,8 @@ class KafkaService:
         self._initialize_consumer()
 
     def _initialize_consumer(self):
-        """Initialize Kafka consumer with retry logic"""
         max_retries = 5
-        retry_delay = 5  # seconds
+        retry_delay = 5
 
         for attempt in range(max_retries):
             try:
@@ -43,7 +42,6 @@ class KafkaService:
                     raise
 
     def consume_messages(self, callback):
-        """Read messages from Kafka and pass them to callback function"""
         while True:
             try:
                 if self.consumer is None:
@@ -55,7 +53,6 @@ class KafkaService:
                     try:
                         logger.info(f"Received message from topic {message.topic}, partition {message.partition}, offset {message.offset}")
                         
-                        # Log raw message for debugging
                         logger.debug(f"Raw message value: {message.value}")
                         
                         if not message.value:
@@ -69,7 +66,6 @@ class KafkaService:
                             logger.warning(f"Received invalid message format: {data}")
                             continue
 
-                        # Check if this is a product creation event or comment creation event
                         if data.get('action') in ['product_created', 'comment_created']:
                             logger.info(f"Processing {data.get('action')} event: {json.dumps(data, ensure_ascii=False)}")
                             callback(data)
@@ -85,11 +81,10 @@ class KafkaService:
 
             except Exception as e:
                 logger.error(f"Error in Kafka consumer: {str(e)}")
-                time.sleep(5)  # Wait before reconnecting
-                self.consumer = None  # Force reinitialization
+                time.sleep(5)  
+                self.consumer = None  
 
     def close(self):
-        """Safely close the Kafka consumer"""
         if self.consumer:
             try:
                 self.consumer.close()

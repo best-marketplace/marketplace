@@ -17,9 +17,8 @@ class ElasticsearchService:
         self._initialize_elasticsearch()
 
     def _initialize_elasticsearch(self):
-        """Initialize Elasticsearch connection with retry logic"""
         max_retries = 5
-        retry_delay = 5  # seconds
+        retry_delay = 5 
 
         for attempt in range(max_retries):
             try:
@@ -30,8 +29,7 @@ class ElasticsearchService:
                     max_retries=3,
                     timeout=30
                 )
-                
-                # Test connection
+
                 if not self.es.ping():
                     raise ConnectionError("Failed to connect to Elasticsearch")
                 
@@ -48,7 +46,6 @@ class ElasticsearchService:
                     raise
 
     def _create_index_if_not_exists(self):
-        """Create index if it doesn't exist"""
         try:
             if not self.es.indices.exists(index=self.index):
                 logger.info(f"Creating index {self.index} with mapping")
@@ -61,7 +58,6 @@ class ElasticsearchService:
             raise
 
     def _create_comment_index_if_not_exists(self):
-        """Create comments index if it doesn't exist"""
         try:
             if not self.es.indices.exists(index=self.comment_index):
                 logger.info(f"Creating index {self.comment_index} with mapping")
@@ -74,25 +70,22 @@ class ElasticsearchService:
             raise
 
     def index_product(self, product_data):
-        """Index product in Elasticsearch with retry logic"""
         if not self.es:
             logger.info("Elasticsearch connection lost, reinitializing...")
             self._initialize_elasticsearch()
 
         max_retries = 3
-        retry_delay = 2  # seconds
+        retry_delay = 2 
 
         for attempt in range(max_retries):
             try:
                 logger.info(f"Processing product data for indexing: {json.dumps(product_data, ensure_ascii=False)}")
                 
-                # Extract and validate required fields
                 product_id = product_data.get('product_id')
                 if not product_id:
                     logger.error("Product ID is missing in the data")
                     return False
 
-                # Prepare document for indexing
                 document = {
                     'product_id': product_id,
                     'title': product_data.get('title', ''),
@@ -101,12 +94,11 @@ class ElasticsearchService:
 
                 logger.info(f"Prepared document for indexing: {json.dumps(document, ensure_ascii=False)}")
 
-                # Index the document
                 response = self.es.index(
                     index=self.index,
                     id=product_id,
                     body=document,
-                    refresh=True  # Make the document immediately searchable
+                    refresh=True  
                 )
 
                 if response['result'] in ['created', 'updated']:
@@ -120,7 +112,7 @@ class ElasticsearchService:
                 if attempt < max_retries - 1:
                     logger.warning(f"Connection error while indexing product (attempt {attempt + 1}/{max_retries}): {str(e)}")
                     time.sleep(retry_delay)
-                    self._initialize_elasticsearch()  # Try to reinitialize connection
+                    self._initialize_elasticsearch() 
                 else:
                     logger.error(f"Failed to index product after {max_retries} attempts: {str(e)}")
                     return False
@@ -135,19 +127,17 @@ class ElasticsearchService:
             self._initialize_elasticsearch()
 
         max_retries = 3
-        retry_delay = 2  # seconds
+        retry_delay = 2 
 
         for attempt in range(max_retries):
             try:
                 logger.info(f"Processing comment data for indexing: {json.dumps(comment_data, ensure_ascii=False)}")
-                
-                # Extract and validate required fields
+
                 comment_id = comment_data.get('comment_id')
                 if not comment_id:
                     logger.error("Comment ID is missing in the data")
                     return False
 
-                # Prepare document for indexing
                 document = {
                     'comment_id': comment_id,
                     'comment': comment_data.get('comment', '')
@@ -155,12 +145,11 @@ class ElasticsearchService:
 
                 logger.info(f"Prepared document for indexing: {json.dumps(document, ensure_ascii=False)}")
 
-                # Index the document
                 response = self.es.index(
                     index=self.comment_index,
                     id=comment_id,
                     body=document,
-                    refresh=True  # Make the document immediately searchable
+                    refresh=True 
                 )
 
                 if response['result'] in ['created', 'updated']:
@@ -174,7 +163,7 @@ class ElasticsearchService:
                 if attempt < max_retries - 1:
                     logger.warning(f"Connection error while indexing comment (attempt {attempt + 1}/{max_retries}): {str(e)}")
                     time.sleep(retry_delay)
-                    self._initialize_elasticsearch()  # Try to reinitialize connection
+                    self._initialize_elasticsearch() 
                 else:
                     logger.error(f"Failed to index comment after {max_retries} attempts: {str(e)}")
                     return False
@@ -183,7 +172,6 @@ class ElasticsearchService:
                 return False
 
     def close(self):
-        """Safely close the Elasticsearch connection"""
         if self.es:
             try:
                 self.es.close()

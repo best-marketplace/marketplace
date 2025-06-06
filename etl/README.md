@@ -89,13 +89,3 @@ curl -X GET "http://localhost:9200/products/_search" -H "Content-Type: applicati
 - Индексация в Elasticsearch
 - Ошибки и исключения
 
-## Структура проекта
-```
-etl/
-├── main.py              # Основной код ETL сервиса
-├── config.py            # Конфигурация сервиса
-├── services/
-│   ├── kafka_service.py      # Сервис для работы с Kafka
-│   └── elasticsearch_service.py  # Сервис для работы с Elasticsearch
-└── README.md            # Документация
-``` 
