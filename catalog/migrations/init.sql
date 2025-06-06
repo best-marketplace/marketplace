@@ -1,22 +1,34 @@
+CREATE TABLE categories (
+    id UUID PRIMARY KEY,
+    name TEXT NOT NULL
+);
+
 CREATE TABLE products (
     id UUID PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT,
     price INT NOT NULL CHECK (price >= 0),
     seller_name TEXT NOT NULL,
-    category TEXT NOT NULL,
+    category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-
 
 CREATE TABLE comments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    comment TEXT NOT NULL
+    comment TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO products (id, name, description, price, seller_name, category)
+INSERT INTO categories (id, name)
+VALUES 
+  ('11111111-1111-1111-1111-111111111111', 'Смартфоны'),
+  ('22222222-2222-2222-2222-222222222222', 'Бытовая техника'),
+  ('33333333-3333-3333-3333-333333333333', 'Мужская одежда'),
+  ('44444444-4444-4444-4444-444444444444', 'Электроника');
+
+INSERT INTO products (id, name, description, price, seller_name, category_id)
 VALUES 
   (
     gen_random_uuid(),
@@ -24,7 +36,7 @@ VALUES
     'Смартфон от Apple с передовой камерой и процессором A16',
     130000,
     'TechWorld',
-    'Смартфоны'
+    '11111111-1111-1111-1111-111111111111'
   ),
   (
     gen_random_uuid(),
@@ -32,7 +44,7 @@ VALUES
     'Флагманский смартфон с лучшим дисплеем и камерой',
     120000,
     'TechWorld',
-    'Смартфоны'
+    '11111111-1111-1111-1111-111111111111'
   ),
   (
     gen_random_uuid(),
@@ -40,7 +52,7 @@ VALUES
     'Фронтальная загрузка, 7 кг, эффективное удаление пятен',
     40000,
     'HomeStyle',
-    'Бытовая техника'
+    '22222222-2222-2222-2222-222222222222'
   ),
   (
     gen_random_uuid(),
@@ -48,7 +60,7 @@ VALUES
     'Вертикальный беспроводной пылесос с циклонной технологией',
     35000,
     'HomeStyle',
-    'Бытовая техника'
+    '22222222-2222-2222-2222-222222222222'
   ),
   (
     gen_random_uuid(),
@@ -56,7 +68,7 @@ VALUES
     'Эспрессо-машина с капучинатором и автоматическим отключением',
     28000,
     'HomeStyle',
-    'Бытовая техника'
+    '22222222-2222-2222-2222-222222222222'
   ),
   (
     gen_random_uuid(),
@@ -64,7 +76,7 @@ VALUES
     'Тёплая и ветронепроницаемая куртка для холодного сезона',
     16000,
     'FashionX',
-    'Мужская одежда'
+    '33333333-3333-3333-3333-333333333333'
   ),
   (
     gen_random_uuid(),
@@ -72,7 +84,7 @@ VALUES
     'Классическая мужская футболка из дышащего материала',
     2900,
     'FashionX',
-    'Мужская одежда'
+    '33333333-3333-3333-3333-333333333333'
   ),
   (
     gen_random_uuid(),
@@ -80,7 +92,7 @@ VALUES
     'Высокопроизводительный ноутбук для профессионалов',
     120000,
     'TechWorld',
-    'Электроника'
+    '44444444-4444-4444-4444-444444444444'
   ),
   (
     gen_random_uuid(),
@@ -88,7 +100,7 @@ VALUES
     'Эргономичная игровая мышь с RGB-подсветкой',
     4500,
     'ClickZone',
-    'Электроника'
+    '44444444-4444-4444-4444-444444444444'
   ),
   (
     gen_random_uuid(),
@@ -96,7 +108,7 @@ VALUES
     'Новейший смартфон с OLED-экраном и быстрой зарядкой',
     85000,
     'LaptopHub',
-    'Смартфоны'
+    '11111111-1111-1111-1111-111111111111'
   ),
   (
     gen_random_uuid(),
@@ -104,7 +116,7 @@ VALUES
     'Компактная беспроводная клавиатура с длительным сроком работы',
     3800,
     'KeyMasters',
-    'Электроника'
+    '44444444-4444-4444-4444-444444444444'
   ),
   (
     gen_random_uuid(),
@@ -112,7 +124,7 @@ VALUES
     'Наушники с активным шумоподавлением и высоким качеством звука',
     15000,
     'AudioShop',
-    'Электроника'
+    '44444444-4444-4444-4444-444444444444'
   ),
   (
     gen_random_uuid(),
@@ -120,7 +132,7 @@ VALUES
     'Фитнес-часы с отслеживанием сна и пульсометром',
     12000,
     'SportStore',
-    'Электроника'
+    '44444444-4444-4444-4444-444444444444'
   ),
   (
     gen_random_uuid(),
@@ -128,7 +140,7 @@ VALUES
     'Стильная мужская куртка для повседневной носки',
     8700,
     'UrbanWear',
-    'Мужская одежда'
+    '33333333-3333-3333-3333-333333333333'
   );
 
 

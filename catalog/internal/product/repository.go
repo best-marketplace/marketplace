@@ -160,9 +160,10 @@ func (rep *ProductRepository) ViewProduct(ctx context.Context, id string) (*mode
 			p.description,
 			p.price,
 			p.seller_name,
-			p.category,
+			c.name,
 			p.created_at
 		FROM products p
+		LEFT JOIN categories c ON p.category_id = c.id
 		WHERE p.id = $1
 	`
 
@@ -191,15 +192,28 @@ func (rep *ProductRepository) ViewProduct(ctx context.Context, id string) (*mode
 func (rep *ProductRepository) AddProduct(ctx context.Context, sellerName, name, description, categoryName string, price int) (uuid.UUID, error) {
 	const op = "product.repository.AddProduct"
 
+	var categoryID uuid.UUID
+	queryCategory := `SELECT id FROM categories WHERE name = $1`
+
+	err := rep.db.QueryRowContext(ctx, queryCategory, categoryName).Scan(&categoryID)
+
+	if err == sql.ErrNoRows {
+		return uuid.Nil, fmt.Errorf("%s: category not found", op)
+	}
+
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("%s: failed to query category: %w", op, err)
+	}
+
 	productID := uuid.New()
 
 	const queryInsert = `
-		INSERT INTO products (id, name, description, price, seller_name, category)
+		INSERT INTO products (id, name, description, price, seller_name, category_id)
 		VALUES ($1, $2, $3, $4, $5, $6)
 	`
 
-	_, err := rep.db.ExecContext(ctx, queryInsert,
-		productID, name, description, price, sellerName, categoryName,
+	_, err = rep.db.ExecContext(ctx, queryInsert,
+		productID, name, description, price, sellerName, categoryID,
 	)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("%s: failed to insert product: %w", op, err)
