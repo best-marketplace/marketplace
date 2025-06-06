@@ -1,86 +1,47 @@
 package middleware
 
-import "net/http"
-
-// import (
-// 	"catalog/internal/lib/handlers/response"
-// 	"context"
-// 	"errors"
-// 	"log/slog"
-// 	"net/http"
-// 	"strings"
-
-// 	"github.com/dgrijalva/jwt-go"
-// )
+import (
+	"context"
+	"log/slog"
+	"net/http"
+)
 
 type contextKey string
 
-const UserIDContextKey contextKey = "UserID"
+const (
+	UserIDContextKey   contextKey = "UserID"
+	UsernameContextKey contextKey = "Username"
+)
 
-// func Auth(log *slog.Logger, secret string) func(http.Handler) http.Handler {
-// 	return func(next http.Handler) http.Handler {
-// 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 			tokenString := extractToken(r)
-// 			if tokenString == "" {
-// 				response.RespondWithError(w, log, http.StatusUnauthorized, "Unauthorized")
+func HeaderAuth(log *slog.Logger) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			userID := r.Header.Get("X-User-ID")
+			username := r.Header.Get("X-Username")
 
-// 				return
-// 			}
+			if userID != "" {
+				log.Info("User authenticated",
+					slog.String("user_id", userID),
+					slog.String("username", username))
 
-// 			token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+				ctx := context.WithValue(r.Context(), UserIDContextKey, userID)
+				ctx = context.WithValue(ctx, UsernameContextKey, username)
 
-// 				return []byte(secret), nil
-// 			})
+				next.ServeHTTP(w, r.WithContext(ctx))
+				return
+			}
 
-// 			if err != nil || !token.Valid {
-// 				response.RespondWithError(w, log, http.StatusUnauthorized, "Unauthorized")
-
-// 				return
-// 			}
-
-// 			claims, ok := token.Claims.(jwt.MapClaims)
-// 			if !ok {
-// 				response.RespondWithError(w, log, http.StatusUnauthorized, "Unauthorized")
-
-// 				return
-// 			}
-
-// 			user, ok := claims["user"].(map[string]interface{})
-// 			if !ok {
-// 				response.RespondWithError(w, log, http.StatusUnauthorized, "Invalid token format")
-
-// 				return
-// 			}
-
-// 			userID, ok := user["id"].(string)
-// 			if !ok {
-// 				response.RespondWithError(w, log, http.StatusUnauthorized, "Invalid user ID")
-
-// 				http.Error(w, "Invalid user ID", http.StatusUnauthorized)
-// 				return
-// 			}
-
-// 			ctx := context.WithValue(r.Context(), UserIDContextKey, userID)
-// 			next.ServeHTTP(w, r.WithContext(ctx))
-// 		})
-// 	}
-// }
-
-// func extractToken(r *http.Request) string {
-// 	authHeader := r.Header.Get("Authorization")
-// 	if authHeader == "" {
-// 		return ""
-// 	}
-
-// 	parts := strings.Split(authHeader, " ")
-// 	if len(parts) != 2 || parts[0] != "Bearer" {
-// 		return ""
-// 	}
-
-// 	return parts[1]
-// }
+			next.ServeHTTP(w, r)
+		})
+	}
+}
 
 func GetUserID(r *http.Request) (string, bool) {
 	userID, ok := r.Context().Value(UserIDContextKey).(string)
 	return userID, ok
+}
+
+func GetUsername(r *http.Request) (string, bool) {
+	username, ok := r.Context().Value(UsernameContextKey).(string)
+	return username, ok
 }

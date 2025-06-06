@@ -74,6 +74,7 @@ func NewApp(log *slog.Logger, cfg *config.Config) *App {
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
 	router.Use(m.MetricsMiddleware)
+	router.Use(m.HeaderAuth(log))
 
 	router.Use(m.LogEventMiddleware(log, producer))
 	router.Handle("/metrics", promhttp.Handler())

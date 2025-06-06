@@ -63,8 +63,8 @@ class AuthService:
         return user
 
     def register_user(self, user: UserCreate):
-        user.hashed_password = self.get_password_hash(user.password)
-        return self.repository.create_user(user)
+        hashed_password = self.get_password_hash(user.password)
+        return self.repository.create_user(user, hashed_password)
 
     def verify_token(self, token: str) -> Optional[TokenData]:
         try:

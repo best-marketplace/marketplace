@@ -14,6 +14,7 @@ type Config struct {
 
 type ServiceRoutesConfig struct {
 	CatalogService string `env:"CATALOG_SERVICE_URL" default:"http://backend:8080"`
+	AuthService    string `env:"AUTH_SERVICE_URL" default:"http://auth:5000"`
 }
 
 func Load() *Config {
@@ -40,5 +41,6 @@ func (c *Config) GetRoutes() map[string]string {
 		"/product":  c.ServiceRoutes.CatalogService,
 		"/comment":  c.ServiceRoutes.CatalogService,
 		"/comments": c.ServiceRoutes.CatalogService,
+		"/auth":     c.ServiceRoutes.AuthService,
 	}
 }
