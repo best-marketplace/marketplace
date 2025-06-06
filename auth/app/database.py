@@ -1,25 +1,14 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-import os
-from dotenv import load_dotenv
+from .config import settings
 
-
-load_dotenv()
-
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://marketplace_user:marketplace_password@postgres-auth:5432/marketplace_auth"
-)
-
-
-engine = create_engine(DATABASE_URL, echo=True)
-
+engine = create_engine(settings.get_database_url)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
-def get_db(): 
+def get_db():
     db = SessionLocal()
     try:
         yield db

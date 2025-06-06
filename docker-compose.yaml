@@ -24,39 +24,39 @@ services:
   #     - auth
   #     - backend
 
-  # auth:
-  #   build: ./auth
-  #   container_name: auth_service
-  #   # ports:
-  #   #   - "5000:5000"
-  #   environment:
-  #     - DATABASE_URL=postgresql://postgres:postgres@postgres-auth:5432/auth_db
-  #     - JWT_SECRET_KEY=your-secret-key
-  #     - JWT_ALGORITHM=HS256
-  #   depends_on:
-  #     postgres-auth:
-  #       condition: service_healthy
+  auth:
+    build: ./auth
+    container_name: auth_service
+    ports:
+      - "5000:8000"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_HOST=postgres-auth
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=auth_db
+      - JWT_SECRET_KEY=your-secret-key-here
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
 
-
-
-  # postgres-auth:
-  #   image: postgres
-  #   container_name: postgres-auth
-  #   restart: always
-  #   environment:
-  #     POSTGRES_USER: postgres
-  #     POSTGRES_PASSWORD: postgres
-  #     POSTGRES_DB: auth_db
-  #     PGPORT: 5432
-  #   ports:
-  #     - "5433:5432"
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready -U postgres -d auth_db"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
-  #   volumes:
-  #     - './auth/migrations/:/docker-entrypoint-initdb.d/'
+  postgres-auth:
+    image: postgres
+    container_name: postgres-auth
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: auth_db
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d auth_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - './auth/migrations/:/docker-entrypoint-initdb.d/'
 
   postgres-catalog:
     image: postgres
